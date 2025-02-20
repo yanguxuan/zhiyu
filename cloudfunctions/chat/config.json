@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "openapi": []
+  },
+  "env": {
+    "ZHIPU_API_KEY": "9487377ba2c049b6b1b6330b67d3dbb0.UuuqyCMGUbkvobk2"
+  }
+}

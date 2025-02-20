@@ -1,0 +1,39 @@
+<!--pages/chat/chat.wxml-->
+<view class="chat-container" style="background-image: url('{{backgroundImagePath}}');">
+  <image  class="logo" src="{{logoPath}}" mode="aspectFill" wx:if="{{logoPath}}"></image>
+  <view
+   class="message-list">
+    <!-- 聊天消息列表 -->
+    <scroll-view class="message-list" scroll-y scroll-into-view="msg-{{messages.length-1}}" enhanced="true" show-scrollbar="false" style="position: relative; left: 0rpx; top: 0rpx">
+      <view class="message-wrapper {{item.type === 'user' ? 'message-right' : ''}}" 
+            wx:for="{{messages}}" 
+            wx:key="id"
+            id="msg-{{index}}">
+        <image class="avatar" 
+               src="{{item.type === 'user'? userInfo.avatarUrl : logoPath}}" 
+               mode="aspectFill" style="position: relative; left: -20rpx; top: 0rpx">
+        </image>
+        <view class="message-content" style="position: relative; left: -20rpx; top: 0rpx">
+          <text>{{item.content}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 输入框区域 -->
+  <view class="input-area">
+    <textarea class="message-input" 
+              value="{{inputValue}}"
+              bindinput="onInput"
+              placeholder="请输入您的问题"
+              confirm-type="send"
+              bindconfirm="sendMessage"
+              cursor-spacing="20"
+              hold-keyboard="{{true}}"
+              auto-height="{{true}}"
+              />
+    <button class="send-btn {{isDisabled ? 'disabled' : ''}}" disabled="{{isDisabled}}" bindtap="sendMessage">
+      发送
+    </button>
+  </view>
+</view>

@@ -1,0 +1,58 @@
+.container {
+  position: relative;
+  min-height: 100vh;
+  padding: 20rpx;
+  background: linear-gradient(to bottom, rgba(25, 11, 221, 0.8) 0%, rgba(255, 255, 255, 0.8) 60%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.avatar-wrapper {
+  width: 160rpx;
+  height: 160rpx;
+  margin-bottom: 20rpx;
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.info {
+  text-align: center;
+  margin-top: 20rpx;
+}
+
+.nickname {
+  font-size: 32rpx;
+  font-weight: bold;
+}
+
+.email, .phone {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.info-box {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 65%; 
+  background-color: rgb(247, 240, 240); 
+  border-radius: 20rpx; /* 添加圆角 */
+  padding: 20rpx;
+}
+
+.account-label {
+  font-size: 34rpx;
+  color: #888888;
+}
+
+.function-label {
+  font-size: 34rpx; /* 设置字体大小 */
+  color: #888888; /* 设置字体颜色为灰色 */
+  margin-top: 20rpx; /* 添加上边距以增加间距 */
+}

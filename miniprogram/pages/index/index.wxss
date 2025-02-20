@@ -1,0 +1,153 @@
+/* index.wxss */
+.container {
+  position: relative; /* 设置父容器为相对定位 */
+  min-height: 100vh;
+  padding: 40rpx;
+  background-color: #f6f6f6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 60rpx;
+  padding: 40rpx 0;
+}
+
+.avatar {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  margin-bottom: 20rpx;
+  background-color: #f0f0f0;
+}
+
+.nickname {
+  font-size: 32rpx;
+  color: #333;
+  font-weight: bold;
+}
+
+.content {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 80rpx;
+}
+
+.welcome-text {
+  font-size: 40rpx;
+  color: #333;
+  font-weight: bold;
+  margin-bottom: 20rpx;
+}
+
+.tip-text {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.action-buttons {
+  position: absolute; /* 使用绝对定位 */
+  top: 20rpx; /* 距离顶部的距离 */
+  right: 20rpx; /* 距离右侧的距离 */
+  background-image: url('{{ cloudImageUrl }}'); /* 设置云端图片为背景 */
+  background-size: cover; /* 背景图片覆盖整个按钮 */
+  background-position: center; /* 背景图片居中 */
+  border-radius: 50px; /* 添加圆角 */
+  cursor: pointer; /* 鼠标悬停时显示为手型 */
+}
+
+.info-button {
+  width: 100rpx; /* 设置按钮的宽度 */
+  height: 100rpx; /* 设置按钮的高度，确保与宽度相等 */
+  cursor: pointer; /* 鼠标悬停时显示为手型 */
+  transition: transform 0.1s, opacity 0.1s; /* 添加过渡效果 */
+}
+
+.info-button:active {
+  transform: scale(0.95); /* 点击时缩小按钮 */
+  opacity: 0.8; /* 点击时的透明度 */
+  box-shadow: 0 2rpx 5rpx rgba(0, 0, 0, 0.2); /* 添加阴影效果 */
+}
+
+.btn-start-chat {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  background: #007AFF;
+  color: #fff;
+  font-size: 32rpx;
+  border-radius: 44rpx;
+  text-align: center;
+  transition: background-color 0.2s, transform 0.01s;
+  cursor: pointer; /* 鼠标悬停时显示为手型 */
+}
+
+.btn-start-chat:active {
+  background: #0056b3;
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
+
+.hot-topics {
+  position: relative; /* 或者 absolute，根据需要 */
+  z-index: 10; /* 设置较高的 z-index 确保在最前面 */
+  width: 80%;              /* 宽度为页面的80% */
+  max-width: 600px;       /* 最大宽度限制 */
+  height: 40%;            /* 高度为页面的一半 */
+  background: rgba(255, 255, 255, 0.9); /* 背景色，稍微透明 */
+  border-radius: 12px;    /* 圆角 */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* 阴影效果 */
+  margin: 20px auto;      /* 上下边距20px，水平居中 */
+  display: flex;          /* 使用flex布局 */
+  flex-direction: column; /* 垂直排列内容 */
+  justify-content: flex-start; /* 内容从顶部开始排列 */
+  align-items: flex-start; /* 水平左对齐内容 */
+  padding: 10px;          /* 添加内边距 */
+}
+
+.hot-topics {
+  margin-top: -25rpx; /* 向上移动 20rpx */
+  /* 其他样式保持不变 */
+} 
+
+.hot-topics-title {
+  font-size: 50rpx; /* 标题字体大小 */
+  font-weight: bold; /* 加粗 */
+  font-style: italic; /* 斜体 */
+  color: #333; /* 颜色 */
+  margin-bottom: 10rpx; /* 与下面内容的间距 */
+  position: relative; /* 使其相对定位 */
+  left: 0; /* 左对齐 */
+}
+
+.information-enter-wrapper {
+  width: 100%; /* 设置宽度 */
+  height: auto; /* 自适应高度 */
+  margin-bottom: 20rpx; /* 下边距 */
+}
+
+.information-enter {
+  width: 100%; /* 设置图片宽度 */
+  height: auto; /* 自适应高度 */
+}
+
+.topic-link {
+    font-size: 30rpx; /* 调整文本大小 */
+    color: #000000; /* 使用蓝色表示可点击 */
+    margin: 10rpx 0; /* 添加一些上下间距 */
+    cursor: pointer; /* 鼠标悬停时显示为可点击 */
+    transition: color 0.3s; /* 添加过渡效果 */
+}
+
+.divider {
+    width: 100%; /* 分隔线宽度 */
+    height: 1px; /* 分隔线高度 */
+    background-color: #ccc; /* 灰色 */
+    margin: 10rpx 0; /* 上下间距 */
+}

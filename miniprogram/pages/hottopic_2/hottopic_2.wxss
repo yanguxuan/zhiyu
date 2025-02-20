@@ -1,0 +1,17 @@
+.container {
+  padding: 20rpx;
+}
+
+.custom-text {
+  font-size: 36rpx;
+  color: #333;
+}
+
+.content-box {
+  background-color: rgba(255, 255, 255, 0.8); /* 白色背景，带透明度 */
+  border-radius: 10rpx; /* 圆角 */
+  padding: 40rpx; /* 内边距 */
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1); /* 阴影效果 */
+  margin: 20rpx 0; /* 上下间距 */
+  max-width: 80%; /* 设置最大宽度为 80% */
+}

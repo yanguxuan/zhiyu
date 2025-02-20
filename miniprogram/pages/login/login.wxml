@@ -1,0 +1,40 @@
+<!-- 登录页面 -->
+<view class="container">
+  <image class="logo" src="{{logoPath}}" mode="aspectFill" wx:if="{{logoPath}}"></image>
+  <view class="header">
+    <text class="title">知心阿姨</text>
+    <text class="subtitle">您的亲子沟通好帮手</text>
+  </view>
+
+  <view class="login-form">
+    <!-- 头像选择 -->
+    <button class="avatar-wrapper" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar" style="position: relative; left: 0rpx; top: -4rpx">
+      <image class="avatar" src="{{avatarUrl || defaultAvatarPath}}" mode="aspectFill"></image>
+      <text class="avatar-tip">点击选择头像</text>
+    </button>
+
+    <!-- 昵称输入 -->
+    <view class="input-wrapper">
+      <input type="nickname" class="nickname-input" placeholder="请输入昵称" bindinput="onInputNickname" value="{{nickName}}" />
+    </view>
+
+    <!-- 用户协议 -->
+    <view class="agreement">
+      <checkbox-group bindchange="onAgreementChange">
+        <checkbox value="agreed" checked="{{agreed}}">我已阅读并同意</checkbox>
+      </checkbox-group>
+      <view class="agreement-links">
+        <text class="link" bindtap="showAgreement">《用户协议》</text>
+        <text>和</text>
+        <text class="link" bindtap="showPrivacy">《隐私政策》</text>
+      </view>
+    </view>
+
+    <!-- 登录按钮 -->
+    <button class="login-btn {{(!agreed || !hasAvatar || !hasNickname) ? 'disabled' : ''}}" 
+            disabled="{{!agreed || !hasAvatar || !hasNickname || loading}}"
+            bindtap="handleLogin" style="height: 116rpx; display: block; box-sizing: border-box; left: 0rpx; top: 0rpx">
+      {{loading ? '登录中...' : '登录'}}
+    </button>
+  </view>
+</view> 

@@ -1,0 +1,144 @@
+/* pages/chat/chat.wxss */
+.chat-container {
+  width: 100%;
+  max-width: 750rpx;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow-x: hidden;
+  touch-action: pan-y;
+  background-image: url('{{backgroundImageUrl}}');
+  background-size: cover;
+  background-position: center;
+  min-height: 100vh; /* 设置容器最小高度为视口高度 */
+  align-items: center;
+}
+
+.logo {
+  width: 100px; /* 设置 logo 宽度 */
+  height: auto; /* 自适应高度 */
+  margin-bottom: 20rpx; /* 下边距 */
+}
+
+.message-list {
+  width: 94%;
+  max-width: 750rpx;
+  margin: 0 auto;
+  flex: 1;
+  padding: 20rpx;
+  overflow-y: auto;
+  margin-bottom: 72rpx;
+  background-color: rgba(255, 255, 255, 0);
+  user-select: text;
+}
+
+.message-wrapper {
+  display: flex;
+  margin-bottom: 30rpx;
+  align-items: flex-start;
+}
+
+.message-right {
+  flex-direction: row-reverse;
+}
+
+.avatar {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  margin: 0 20rpx;
+}
+
+.message-content {
+  max-width: 60%;
+  padding: 20rpx;
+  border-radius: 10rpx;
+  background-color: #fff;
+  word-wrap: break-word;
+  font-size: 28rpx;
+  line-height: 1.5;
+  position: relative;
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.05);
+}
+
+.message-right .message-content {
+  background-color: #07c160;
+  color: #fff;
+  transform: translateX(30rpx);
+}
+
+.message-right .avatar {
+  transform: translateX(30rpx); /* 这里设置向右移动的距离，可按需调整 */
+}
+
+
+.input-area {
+  padding: 35rpx;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-top: 1rpx solid #eee;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+}
+
+.message-input {
+  flex: 1;
+  height: 72rpx;
+  background-color: #f8f8f8;
+  border-radius: 36rpx;
+  padding: 10rpx 30rpx;
+  font-size: 32rpx;
+  margin-right: 20rpx;
+  overflow: hidden;
+  text-align: center;
+  line-height: 50rpx;
+}
+
+.message-input::placeholder {
+  text-align: center;
+  color: #999;
+}
+
+.send-btn {
+  flex: 0 0 25%;
+  height: 72rpx !important;
+  line-height: 72rpx !important;
+  font-size: 28rpx !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background-color: #07c160 !important;
+  color: #fff !important;
+  border-radius: 36rpx !important;
+  border: none !important;
+  transition: background-color 0.3s;
+  cursor: pointer; /* 鼠标悬停时显示为手型 */
+}
+
+.send-btn:active {
+  background-color: #05a150 !important;
+  transform: scale(0.95);
+}
+
+.send-btn.disabled {
+  background-color: #9be6b4 !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.send-btn::after {
+  border: none !important;
+}
+
+.background-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+}

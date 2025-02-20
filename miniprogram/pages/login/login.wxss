@@ -1,0 +1,143 @@
+/* 容器样式 */
+.container {
+  min-height: 100vh;
+  padding: 40rpx;
+  background-color: #f6f6f6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 头部样式 */
+.header {
+  margin-top: 60rpx;
+  text-align: center;
+}
+
+.logo {
+  width: 100px; /* 设置 logo 宽度 */
+  height:100px; /* 自适应高度 */
+  margin-bottom: 5rpx; /* 下边距 */
+}
+
+.title {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+  display: block;
+}
+
+.subtitle {
+  font-size: 28rpx;
+  color: #666;
+  display: block;
+}
+
+/* 登录表单样式 */
+.login-form {
+  width: 100%;
+  margin-top: 60rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 40rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+}
+
+/* 头像选择样式 */
+.avatar-wrapper {
+  background: none;
+  padding: 0;
+  width: 160rpx;
+  height: 160rpx;
+  margin: 0 auto 30rpx;
+  display: block;
+}
+
+.avatar-wrapper::after {
+  border: none;
+}
+
+.avatar {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  border: 2rpx solid #eee;
+}
+
+.avatar-tip {
+  font-size: 24rpx;
+  color: #999;
+  text-align: center;
+  display: block;
+  margin-top: 10rpx;
+}
+
+/* 昵称输入框样式 */
+.input-wrapper {
+  margin: 30rpx 0;
+}
+
+.nickname-input {
+  height: 88rpx;
+  background: #f8f8f8;
+  border-radius: 44rpx;
+  padding: 0 40rpx;
+  font-size: 28rpx;
+}
+
+/* 用户协议样式 */
+.agreement {
+  margin: 40rpx 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 26rpx;
+}
+
+.agreement checkbox {
+  transform: scale(0.8);
+}
+
+.agreement-links {
+  margin-top: 10rpx;
+}
+
+.link {
+  color: #576b95;
+  display: inline;
+}
+
+/* 登录按钮样式 */
+.login-btn {
+  width: 100% !important;
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: 44rpx;
+  background: #07c160;
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-top: 40rpx;
+  transition: background-color 0.3s, transform 0.05s;
+}
+
+.login-btn.disabled {
+  background: #9be6b4;
+}
+
+.login-btn::after {
+  border: none;
+}
+
+/* 按钮点击效果 */
+.login-btn:active {
+  background: #05a150;
+  transform: scale(0.90);
+  opacity: 0.8;
+}
+
+.hot-topics {
+  margin-top: -20rpx; /* 向上移动 20rpx */
+  /* 其他样式保持不变 */
+} 

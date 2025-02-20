@@ -1,0 +1,15 @@
+{
+    "name": "your_nodejs_function",
+    "version": "1.0.0",
+    "description": "用于文本向量化及相似度查询的云函数",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"No test specified\" && exit 0"
+    },
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@xenova/transformers": "2.17.2",
+        "wx-server-sdk": "2.7.0"
+    }
+}
