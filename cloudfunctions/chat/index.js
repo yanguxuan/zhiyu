@@ -8,7 +8,7 @@ cloud.init({
 
 // 配置智谱AI客户端
 const config = {
-    apiKey: '9487377ba2c049b6b1b6330b67d3dbb0.UuuqyCMGUbkvobk2'
+    apiKey: ''
 };
 
 // 初始化智谱AI客户端
