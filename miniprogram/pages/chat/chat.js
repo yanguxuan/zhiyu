@@ -2,111 +2,51 @@
 const app = getApp()
 
 Page({
-
-  /**
-   * 页面的初始数据
-   */
   data: {
     messages: [],
     inputValue: '',
     loading: false,
     userInfo: null,
-    backgroundImagePath: '', 
-    logoPath: '', 
+    backgroundImagePath: '',
+    logoPath: '',
     chatId: null,
     isHistory: false,
-    isDisabled: true 
+    isDisabled: true
   },
 
-  /**
-   * 生命周期函数--监听页面加载
-   */
   onLoad(options) {
     const userInfo = wx.getStorageSync('userInfo')
     if (!userInfo) {
-      wx.reLaunch({
-        url: '/pages/login/login'
-      })
+      wx.reLaunch({ url: '/pages/login/login' })
       return
     }
 
     this.setData({
       userInfo,
-      chatId: options.chatId || null,
+      chatId: options.chatId || this.generateChatId(),
       isHistory: options.isHistory === 'true'
     })
 
-    // 下载背景图片
     this.downloadBackgroundImage()
-
-    // 下载 logo 图片
     this.downloadLogoImage()
 
-    // 如果是历史对话
-    if (options.chatId && options.isHistory === 'true') {
+    if (options.chatId && this.data.isHistory) {
       this.loadHistoryChat(options.chatId)
     } else {
-      // 添加欢迎消息
-      this.addMessage({
-        type: 'assistant',
-        content: '您好！我是知心阿姨，有事没事咱都可以一块唠。'
-      })
+      this.addWelcomeMessage()
     }
   },
 
-  /**
-   * 生命周期函数--监听页面初次渲染完成
-   */
-  onReady() {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面显示
-   */
-  onShow() {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面隐藏
-   */
-  onHide() {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面卸载
-   */
   onUnload() {
-    // 页面卸载时保存对话
-    if (this.data.messages.length > 1) { 
+    if (this.data.messages.length > 1) {
       this.saveChat()
     }
   },
 
-  /**
-   * 页面相关事件处理函数--监听用户下拉动作
-   */
-  onPullDownRefresh() {
-
+  generateChatId() {
+    return `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
   },
 
-  /**
-   * 页面上拉触底事件的处理函数
-   */
-  onReachBottom() {
-
-  },
-
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage() {
-
-  },
-
-  // 加载历史对话
   async loadHistoryChat(chatId) {
     try {
       const { result } = await wx.cloud.callFunction({
@@ -114,82 +54,82 @@ Page({
         data: { chatId }
       })
 
-      if (result.code === 0 && result.data && result.data.length > 0) {
-        const chat = result.data[0]
-        if (!chat.messages) {
-          throw new Error('对话数据格式错误')
-        }
-
+      if (result.code === 0 && result.data?.[0]?.messages) {
         this.setData({
-          messages: chat.messages.map(msg => ({
+          messages: result.data[0].messages.map(msg => ({
             ...msg,
-            id: Date.now() + Math.random()
+            id: msg.id || Date.now(),
+            // 清理消息空白
+            content: msg.content.replace(/^\n+/, '')
           }))
-        }, () => {
-          // 滚动到最新消息
-          wx.pageScrollTo({
-            scrollTop: 9999,
-            duration: 100
-          })
-        })
-      } else {
-        throw new Error(result.message || '加载对话失败')
+        }, this.scrollToBottom)
       }
     } catch (error) {
-      console.error('加载历史对话失败：', error)
-      wx.showToast({
-        title: '加载历史对话失败',
-        icon: 'none'
-      })
+      console.error('加载历史对话失败:', error)
+      wx.showToast({ title: '加载失败', icon: 'none' })
     }
   },
 
-  // 保存对话
   async saveChat() {
     try {
       await wx.cloud.callFunction({
         name: 'saveHistoryChat',
         data: {
-          messages: this.data.messages,
-          chatId: this.data.chatId
+          chatId: this.data.chatId,
+          messages: this.data.messages.map(msg => ({
+            ...msg,
+            // 确保保存时清理空白
+            content: msg.content.replace(/^\n+/, '')
+          }))
         }
       })
+      console.log('对话记录已更新')
     } catch (error) {
-      console.error('保存对话失败：', error)
+      console.error('保存失败:', error)
     }
   },
 
-  // 添加消息到列表
-  addMessage(message) {
-    const messages = [...this.data.messages, {
-      ...message,
+  addWelcomeMessage() {
+    this.addMessage({
+      type: 'assistant',
+      content: '您好！我是知心阿姨，有事没事咱都可以一块唠。',
       id: Date.now()
-    }]
-    this.setData({ messages }, () => {
-      // 滚动到最新消息
-      wx.pageScrollTo({
-        scrollTop: 9999,
-        duration: 100
-      })
     })
   },
 
-  // 处理输入变化
-  onInput(e) {
-    const inputValue = e.detail.value
+  addMessage(message) {
+    const cleanedMessage = {
+      ...message,
+      content: message.content.replace(/^\n+/, '') // 去除开头换行
+    }
+    
     this.setData({
-      inputValue,
-      isDisabled: inputValue.trim() === '' 
+      messages: [...this.data.messages, {
+        ...cleanedMessage,
+        id: cleanedMessage.id || Date.now()
+      }]
+    }, this.scrollToBottom)
+  },
+
+  scrollToBottom() {
+    wx.pageScrollTo({
+      scrollTop: 99999,
+      duration: 300
     })
   },
 
-  // 发送消息
+  onInput(e) {
+    this.setData({
+      inputValue: e.detail.value,
+      isDisabled: e.detail.value.trim() === ''
+    })
+  },
+
   async sendMessage() {
     const content = this.data.inputValue.trim()
     if (!content || this.data.loading) return
 
-    // 清空输入框并设置加载状态
-    this.setData({
+    this.setData({ 
       inputValue: '',
       loading: true,
       isDisabled: true
@@ -199,34 +139,26 @@ Page({
     this.addMessage({
       type: 'user',
       content,
-      userInfo: this.data.userInfo 
+      userInfo: this.data.userInfo
     })
 
     try {
-      // 调用云函数获取回复
-      const { result } = await wx.cloud.callFunction({
-        name: 'chat', // 调用新的云函数
-        data: {
-          message: content,
-          chatId: this.data.chatId
-        }
+      // 大模型流式调用
+      const fullResponse = await this.getAIResponse(content)
+      
+      // 添加助手回复
+      this.addMessage({
+        type: 'assistant',
+        content: fullResponse
       })
 
-      console.log('云函数返回结果：', result)
+      // 立即保存更新
+      await this.saveChat()
 
-      if (result.code === 0) {
-        // 添加助手回复
-        this.addMessage({
-          type: 'assistant',
-          content: result.data.response
-        })
-      } else {
-        throw new Error(result.error || '获取回复失败')
-      }
     } catch (err) {
-      console.error('发送消息失败：', err)
+      console.error('发送失败:', err)
       wx.showToast({
-        title: err.message || '发送失败，请重试',
+        title: err.message || '发送失败',
         icon: 'none',
         duration: 2000
       })
@@ -235,37 +167,71 @@ Page({
     }
   },
 
-  downloadBackgroundImage: function() {
-    const fileID = 'cloud://zhiyu-1gumpjete2a88c59.7a68-zhiyu-1gumpjete2a88c59-1339882768/images/background.png'; 
+  async getAIResponse(content) {
+    wx.cloud.init({ env: "zhiyu-1gumpjete2a88c59" })
+    const model = wx.cloud.extend.AI.createModel("deepseek")
+    
+    const systemPrompt = `你是一位知心阿姨，带有赵本山式的唠嗑风格
+    我是一个6 - 18岁的孩子的家长,你是我的好朋友
+    我的孩子每天会经历各种事情和情绪活动,我遇到事情会找你寻求帮助。
+    而你会根据以下的情绪教导理论进行帮助：
+    1.可以通过多轮对话询问来获取信息，如：(1)孩子的年龄(2)我关于孩子的困扰等，来使建议更加有效
+    2.亲子之间有沟通问题，也可能是家长的态度，语气等有问题。可以引导我对自己行为反思
+    3.提供具体的、有帮助的、对我无害的建议使我的问题得以解决。
+    要求:
+        1.你的每个回复都不会超过70字
+        2.可以通过询问孩子的习惯，是否经历过某些事来推断孩子出现异常行为的原因
+        3.你的回答要言简意赅，自然流畅，语重心长，富有温度
+        4.每次最多问一个问题
+        5.可以委婉，有道理的指出家长一些做法的不当之处，并给出可能的补救措施
+        6.灵活参照数据库中的示例`
 
-    wx.cloud.downloadFile({
-      fileID: fileID,
-      success: res => {
-        console.log('下载成功，临时文件路径:', res.tempFilePath);
-        this.setData({
-          backgroundImagePath: res.tempFilePath 
-        });
-      },
-      fail: err => {
-        console.error('下载失败:', err);
+    const res = await model.streamText({
+      data: {
+        model: "deepseek-v3", // 改用V3模型
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...this.buildContextMessages(),
+          { role: "user", content }
+        ]
       }
-    });
+    })
+
+    let fullResponse = ''
+    for await (const event of res.eventStream) {
+      if (event.data === '[DONE]') break
+      const data = JSON.parse(event.data)
+      const chunk = data?.choices?.[0]?.delta?.content || ''
+      
+      // 实时清理空白字符
+      fullResponse += chunk.replace(/^\n+/, '')
+    }
+    return fullResponse.trim()
   },
 
-  downloadLogoImage: function() {
-    const fileID = 'cloud://zhiyu-1gumpjete2a88c59.7a68-zhiyu-1gumpjete2a88c59-1339882768/images/logo.png'; 
+  buildContextMessages() {
+    return this.data.messages
+      .slice(-4)
+      .filter(msg => msg.content) // 过滤空内容
+      .map(msg => ({
+        role: msg.type === 'user' ? 'user' : 'assistant',
+        content: msg.content.replace(/^\n+/, '')
+      }))
+  },
 
+  downloadBackgroundImage() {
     wx.cloud.downloadFile({
-      fileID: fileID,
-      success: res => {
-        console.log('下载成功，临时文件路径:', res.tempFilePath);
-        this.setData({
-          logoPath: res.tempFilePath 
-        });
-      },
-      fail: err => {
-        console.error('下载失败:', err);
-      }
-    });
+      fileID: 'cloud://zhiyu-1gumpjete2a88c59.7a68-zhiyu-1gumpjete2a88c59-1339882768/images/background.png',
+      success: res => this.setData({ backgroundImagePath: res.tempFilePath }),
+      fail: err => console.error('背景图下载失败:', err)
+    })
+  },
+
+  downloadLogoImage() {
+    wx.cloud.downloadFile({
+      fileID: 'cloud://zhiyu-1gumpjete2a88c59.7a68-zhiyu-1gumpjete2a88c59-1339882768/images/logo.png',
+      success: res => this.setData({ logoPath: res.tempFilePath }),
+      fail: err => console.error('LOGO下载失败:', err)
+    })
   }
 })
