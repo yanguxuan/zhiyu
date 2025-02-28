@@ -30,21 +30,38 @@ Page({
     this.downloadBackgroundImage()
     this.downloadLogoImage()
 
-    if (options.chatId && this.data.isHistory) {
-      this.loadHistoryChat(options.chatId)
+    if (this.data.isHistory) {
+      this.loadHistoryChat(this.data.chatId)
     } else {
       this.addWelcomeMessage()
+      this.initNewChat()
     }
   },
 
   onUnload() {
-    if (this.data.messages.length > 1) {
+    if (this.data.messages.length > 0) {
       this.saveChat()
     }
   },
 
   generateChatId() {
-    return `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    return `chat_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
+  },
+
+  async initNewChat() {
+    try {
+      await wx.cloud.callFunction({
+        name: 'saveHistoryChat',
+        data: {
+          action: 'create',
+          chatId: this.data.chatId,
+          userInfo: this.data.userInfo,
+          messages: []
+        }
+      })
+    } catch (error) {
+      console.error('初始化对话失败:', error)
+    }
   },
 
   async loadHistoryChat(chatId) {
@@ -54,13 +71,12 @@ Page({
         data: { chatId }
       })
 
-      if (result.code === 0 && result.data?.[0]?.messages) {
+      if (result.code === 0 && result.data) {
         this.setData({
-          messages: result.data[0].messages.map(msg => ({
+          messages: result.data.messages.map(msg => ({
             ...msg,
-            id: msg.id || Date.now(),
-            // 清理消息空白
-            content: msg.content.replace(/^\n+/, '')
+            content: this.cleanMessage(msg.content),
+            createTime: msg.createTime ? new Date(msg.createTime) : new Date()
           }))
         }, this.scrollToBottom)
       }
@@ -75,40 +91,49 @@ Page({
       await wx.cloud.callFunction({
         name: 'saveHistoryChat',
         data: {
+          action: 'update',
           chatId: this.data.chatId,
           messages: this.data.messages.map(msg => ({
             ...msg,
-            // 确保保存时清理空白
-            content: msg.content.replace(/^\n+/, '')
+            content: this.cleanMessage(msg.content),
+            createTime: msg.createTime || new Date()
           }))
         }
       })
-      console.log('对话记录已更新')
+      console.log('对话记录已保存')
     } catch (error) {
       console.error('保存失败:', error)
     }
   },
 
+  cleanMessage(content) {
+    return content
+      .replace(/^\n+/g, '')
+      .replace(/\n\s*\n/g, '\n')
+      .trim()
+  },
+
   addWelcomeMessage() {
     this.addMessage({
       type: 'assistant',
-      content: '您好！我是知心阿姨，有事没事咱都可以一块唠。',
-      id: Date.now()
+      content: '您好！我是知心阿姨，有事没事咱都可以一块唠。'
     })
   },
 
   addMessage(message) {
-    const cleanedMessage = {
+    const newMessage = {
       ...message,
-      content: message.content.replace(/^\n+/, '') // 去除开头换行
+      id: message.id || Date.now(),
+      content: this.cleanMessage(message.content),
+      createTime: new Date()
     }
-    
+
     this.setData({
-      messages: [...this.data.messages, {
-        ...cleanedMessage,
-        id: cleanedMessage.id || Date.now()
-      }]
-    }, this.scrollToBottom)
+      messages: [...this.data.messages, newMessage]
+    }, () => {
+      this.scrollToBottom()
+      this.saveChat()
+    })
   },
 
   scrollToBottom() {
@@ -135,7 +160,6 @@ Page({
       isDisabled: true
     })
 
-    // 添加用户消息
     this.addMessage({
       type: 'user',
       content,
@@ -143,18 +167,11 @@ Page({
     })
 
     try {
-      // 大模型流式调用
       const fullResponse = await this.getAIResponse(content)
-      
-      // 添加助手回复
       this.addMessage({
         type: 'assistant',
         content: fullResponse
       })
-
-      // 立即保存更新
-      await this.saveChat()
-
     } catch (err) {
       console.error('发送失败:', err)
       wx.showToast({
@@ -171,29 +188,23 @@ Page({
     wx.cloud.init({ env: "zhiyu-1gumpjete2a88c59" })
     const model = wx.cloud.extend.AI.createModel("deepseek")
     
-    const systemPrompt = `你是一位知心阿姨，带有赵本山式的唠嗑风格
-    我是一个6 - 18岁的孩子的家长,你是我的好朋友
-    我的孩子每天会经历各种事情和情绪活动,我遇到事情会找你寻求帮助。
-    而你会根据以下的情绪教导理论进行帮助：
-    1.可以通过多轮对话询问来获取信息，如：(1)孩子的年龄(2)我关于孩子的困扰等，来使建议更加有效
-    2.亲子之间有沟通问题，也可能是家长的态度，语气等有问题。可以引导我对自己行为反思
-    3.提供具体的、有帮助的、对我无害的建议使我的问题得以解决。
-    要求:
-        1.你的每个回复都不会超过70字
-        2.可以通过询问孩子的习惯，是否经历过某些事来推断孩子出现异常行为的原因
-        3.你的回答要言简意赅，自然流畅，语重心长，富有温度
-        4.每次最多问一个问题
-        5.可以委婉，有道理的指出家长一些做法的不当之处，并给出可能的补救措施
-        6.灵活参照数据库中的示例`
+    const systemPrompt = `【知心阿姨模式激活】\n你是我最铁的东北老妹儿，用唠嗑方式帮我解决育儿问题：\n
+    1. 先问关键信息（年龄/具体问题）\n
+    2. 每次只问一个问题\n
+    3. 用东北话指出我的问题（例："姐们儿你这火气有点冲啊"）\n
+    4. 支招要具体（例："给孩子整点小奖励，作业写完看半小时动画"）\n
+    5. 回复带emoji增加亲切感`
 
     const res = await model.streamText({
       data: {
-        model: "deepseek-v3", // 改用V3模型
+        model: "deepseek-v3",
         messages: [
           { role: "system", content: systemPrompt },
           ...this.buildContextMessages(),
-          { role: "user", content }
-        ]
+          { role: "user", content: this.cleanMessage(content) }
+        ],
+        temperature: 0.7,
+        max_tokens: 150
       }
     })
 
@@ -202,9 +213,7 @@ Page({
       if (event.data === '[DONE]') break
       const data = JSON.parse(event.data)
       const chunk = data?.choices?.[0]?.delta?.content || ''
-      
-      // 实时清理空白字符
-      fullResponse += chunk.replace(/^\n+/, '')
+      fullResponse += this.cleanMessage(chunk)
     }
     return fullResponse.trim()
   },
@@ -212,13 +221,14 @@ Page({
   buildContextMessages() {
     return this.data.messages
       .slice(-4)
-      .filter(msg => msg.content) // 过滤空内容
+      .filter(msg => msg.content.trim().length > 0)
       .map(msg => ({
         role: msg.type === 'user' ? 'user' : 'assistant',
-        content: msg.content.replace(/^\n+/, '')
+        content: this.cleanMessage(msg.content)
       }))
   },
 
+  // 图片下载方法保持不变
   downloadBackgroundImage() {
     wx.cloud.downloadFile({
       fileID: 'cloud://zhiyu-1gumpjete2a88c59.7a68-zhiyu-1gumpjete2a88c59-1339882768/images/background.png',
