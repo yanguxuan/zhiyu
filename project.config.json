@@ -51,10 +51,10 @@
     "tabSize": 2
   },
   "srcMiniprogramRoot": "miniprogram/",
+  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/",
   "packOptions": {
     "ignore": [],
     "include": []
   },
-  "appid": "wx0f698c7c0d8dd4f8",
-  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/"
+  "appid": "wx0f698c7c0d8dd4f8"
 }
