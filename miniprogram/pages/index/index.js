@@ -9,7 +9,8 @@ Page({
   data: {
     userInfo: null,
     informationEnterImagePath: '', // 用于存储下载后的 information-enter 图片路径
-    cloudImageUrl: '' // 用于存储下载的图片路径
+    cloudImageUrl: '', // 用于存储下载的图片路径
+    isNavOpen: false
   },
 
   /**
@@ -182,6 +183,22 @@ Page({
   onTopic3Click: function() {
     wx.navigateTo({
       url: '/pages/hottopic_3/hottopic_3' // 跳转到 hottopic_3 页面
+    });
+  },
+
+  toggleNav() {
+    this.setData({
+      isNavOpen: !this.data.isNavOpen
+    });
+  },
+
+  navTo(e) {
+    const page = e.currentTarget.dataset.page;
+    wx.navigateTo({
+      url: `../${page}/${page}`
+    });
+    this.setData({
+      isNavOpen: false
     });
   },
 })

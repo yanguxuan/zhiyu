@@ -9,32 +9,11 @@
   align-items: center;
 }
 
-.header {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 60rpx;
-  padding: 40rpx 0;
-}
-
-.avatar {
-  width: 160rpx;
-  height: 160rpx;
-  border-radius: 50%;
-  margin-bottom: 20rpx;
-  background-color: #f0f0f0;
-}
-
-.nickname {
-  font-size: 32rpx;
-  color: #333;
-  font-weight: bold;
-}
-
 .content {
   width: 100%;
   text-align: center;
+  position: relative;
+  height: 100vh;
   margin-bottom: 80rpx;
 }
 
@@ -43,11 +22,41 @@
   color: #333;
   font-weight: bold;
   margin-bottom: 20rpx;
+  position: relative;
+  animation: dropDown 1.5s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes dropDown {
+  0% {
+    top: -100rpx;
+    font-size: 30rpx;
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    top: 25vh;
+    font-size: 60rpx;
+    opacity: 1;
+  }
 }
 
 .tip-text {
   font-size: 28rpx;
   color: #666;
+  opacity: 0;
+  animation: fadeIn 0.5s ease-out 1.5s forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .action-buttons {
@@ -150,4 +159,68 @@
     height: 1px; /* 分隔线高度 */
     background-color: #ccc; /* 灰色 */
     margin: 10rpx 0; /* 上下间距 */
+}
+
+.nav-icon {
+  position: fixed;
+  top: 20rpx;
+  right: 20rpx;
+  z-index: 1000;
+  padding: 20rpx;
+}
+
+.dropdown-nav {
+  position: fixed;
+  top: -300rpx; /* 初始位置在屏幕外 */
+  right: 0;
+  width: 300rpx;
+  background: #fff;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+  border-radius: 0 0 20rpx 20rpx;
+  transition: all 0.3s ease;
+  z-index: 999;
+}
+
+.nav-open {
+  top: 100rpx; /* 展开后的位置 */
+}
+
+.nav-item {
+  padding: 30rpx;
+  border-bottom: 1rpx solid #f5f5f5;
+  text-align: center;
+  font-size: 28rpx;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-item .iconfont {
+  font-size: 40rpx;
+  margin-right: 20rpx;
+  color: #333333;
+}
+
+.nav-item .nav-text {
+  font-size: 28rpx;
+}
+
+.nav-item:last-child {
+  border-bottom: none;
+}
+
+.nav-item:active {
+  background-color: #f5f5f5;
+}
+
+.nav-icon .icon-icon-test4 {
+  font-size: 50rpx; /* 增大图标尺寸 */
+  color: #333333; /* 加深颜色 */
+  transition: all 0.25s ease; /* 添加过渡效果使动画更流畅 */
+}
+
+.nav-icon:active .icon-icon-test4 {
+  opacity: 0.8; /* 点击时的效果 */
+  transform: scale(0.8); /* 点击时缩小到90% */
 }

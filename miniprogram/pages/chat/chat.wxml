@@ -25,7 +25,7 @@
     <textarea class="message-input" 
               value="{{inputValue}}"
               bindinput="onInput"
-              placeholder="请输入您的问题"
+              placeholder="给DeepCare发送消息"
               confirm-type="send"
               bindconfirm="sendMessage"
               cursor-spacing="20"

@@ -68,3 +68,4 @@ input {
   height: 200rpx;
   margin-bottom: 20rpx;
 } 
+@import "./iconfont/iconfont.wxss";

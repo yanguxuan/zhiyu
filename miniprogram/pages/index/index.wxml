@@ -1,20 +1,15 @@
 <!--pages/index/index.wxml-->
 <view class="container">
-  <view class="header">
-    <image class="avatar" src="{{userInfo.avatarUrl}}" mode="aspectFill"></image>
-    <text class="nickname">{{userInfo.nickName}}</text>
-  </view>
-  
   <view class="content">
-    <view class="welcome-text">欢迎使用知心阿姨</view>
-    <view class="tip-text">您的亲子沟通好帮手</view>
+    <view class="welcome-text">DeepCare</view>
+    <view class="tip-text" style="position: relative; left: 0rpx; top: 366rpx">您的亲子沟通好帮手</view>
   </view>
 
   <view class="information-enter-wrapper">
     <image class="information-enter" src="{{informationEnterImagePath}}" mode="aspectFill" wx:if="{{informationEnterImagePath}}"></image>
   </view>
 
-  <view class="hot-topics">
+  <view class="hot-topics" style="position: relative; left: 0rpx; top: -268rpx; height: 527rpx; display: flex; box-sizing: border-box; width: 547rpx">
     <text class="hot-topics-title">热门话题</text>
     <view class="divider"></view>
     <view class="topic-link" bindtap="onTopic1Click">1.父母与孩子之间为什么会有矛盾，如何应对？</view>
@@ -25,13 +20,26 @@
     <view class="divider"></view>
   </view>
 
-  <view class="action-buttons" style="position: fixed; bottom: 20px; width: 100%; left: 0rpx; top: 0rpx">
+  <view class="action-buttons" style="position: fixed; bottom: 20px; width: 100%; left: 225rpx; top: 48rpx">
     
     <image class="info-button" src="{{cloudImageUrl}}"bindtap="goToHistory" mode="aspectFill" style="left: 629rpx; top: 189rpx; position: relative"></image>
 
-    <button class="btn-start-chat" bindtap="startChat" style="height: 116rpx; display: block; box-sizing: border-box; left: -1rpx; top: 1156rpx; position: relative">
+    <button class="btn-start-chat" bindtap="startChat" style="height: 116rpx; display: block; box-sizing: border-box; left: -231rpx; top: 1031rpx; position: relative">
       开始咨询
     </button>
     <image class="info-button" src="{{informationEnterImagePath}}" bindtap="goToInformation" mode="aspectFill" style="position: relative; left: 631rpx; top: -162rpx"></image>
+  </view>
+  <view class="nav-icon" bindtap="toggleNav">
+    <view class="iconfont icon-icon-test4"></view>
+  </view>
+  <view class="dropdown-nav {{isNavOpen ? 'nav-open' : ''}}">
+    <view class="nav-item" bindtap="navTo" data-page="information">
+      <text class="iconfont icon-icon-test1"></text>
+      <text class="nav-text">个人信息</text>
+    </view>
+    <view class="nav-item" bindtap="navTo" data-page="history">
+      <text class="iconfont icon-icon-test"></text>
+      <text class="nav-text">历史记录</text>
+    </view>
   </view>
 </view>

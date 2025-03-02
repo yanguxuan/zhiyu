@@ -2,7 +2,7 @@
 <view class="container">
   <image class="logo" src="{{logoPath}}" mode="aspectFill" wx:if="{{logoPath}}"></image>
   <view class="header">
-    <text class="title">知心阿姨</text>
+    <text class="title">DeepCare</text>
     <text class="subtitle">您的亲子沟通好帮手</text>
   </view>
 

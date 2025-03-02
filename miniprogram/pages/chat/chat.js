@@ -177,7 +177,7 @@ Page({
       console.error('智能体初始化失败:', err)
       this.addMessage({
         type: 'assistant',
-        content: '您好！我是知心阿姨，有事没事咱都可以一块唠。'
+        content: '您好！我是DeepCare，有亲子问题尽管交给我~'
       })
     }
   },
