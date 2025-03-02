@@ -1,5 +1,6 @@
 // pages/chat/chat.js
 const app = getApp()
+const BOT_ID = "bot-5edc583e" // 集中管理智能体ID
 
 Page({
   data: {
@@ -33,9 +34,12 @@ Page({
     if (this.data.isHistory) {
       this.loadHistoryChat(this.data.chatId)
     } else {
-      this.addWelcomeMessage()
       this.initNewChat()
+      this.getAgentWelcome() // 初始化智能体信息
     }
+
+    // 确保云环境初始化
+    wx.cloud.init({ env: "zhiyu-1gumpjete2a88c59" })
   },
 
   onUnload() {
@@ -44,10 +48,19 @@ Page({
     }
   },
 
+  // 工具方法
   generateChatId() {
     return `chat_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
   },
 
+  cleanMessage(content) {
+    return content
+      .replace(/^\n+/g, '')
+      .replace(/\n\s*\n/g, '\n')
+      .trim()
+  },
+
+  // 数据存储相关
   async initNewChat() {
     try {
       await wx.cloud.callFunction({
@@ -100,32 +113,19 @@ Page({
           }))
         }
       })
-      console.log('对话记录已保存')
     } catch (error) {
       console.error('保存失败:', error)
     }
   },
 
-  cleanMessage(content) {
-    return content
-      .replace(/^\n+/g, '')
-      .replace(/\n\s*\n/g, '\n')
-      .trim()
-  },
-
-  addWelcomeMessage() {
-    this.addMessage({
-      type: 'assistant',
-      content: '您好！我是知心阿姨，有事没事咱都可以一块唠。'
-    })
-  },
-
+  // 消息处理
   addMessage(message) {
     const newMessage = {
       ...message,
       id: message.id || Date.now(),
       content: this.cleanMessage(message.content),
-      createTime: new Date()
+      createTime: new Date(),
+      isQuestionTip: message.isQuestionTip || false
     }
 
     this.setData({
@@ -143,6 +143,46 @@ Page({
     })
   },
 
+  // 智能体交互
+  async getAgentWelcome() {
+    try {
+      // 获取智能体配置
+      const { data: agentInfo } = await wx.cloud.extend.AI.bot.get({ 
+        botId: BOT_ID 
+      })
+      
+      // 添加欢迎消息
+      this.addMessage({
+        type: 'assistant',
+        content: agentInfo.welcomeMessage || '您好！我是智能助手，随时为您服务。'
+      })
+
+      // 获取推荐问题
+      try {
+        const res = await wx.cloud.extend.AI.bot.getRecommendQuestions({
+          data: { botId: BOT_ID }
+        })
+
+        for await (let question of res.textStream) {
+          this.addMessage({
+            type: 'system',
+            content: `推荐问题：${question}`,
+            isQuestionTip: true
+          })
+        }
+      } catch (err) {
+        console.error('推荐问题获取失败:', err)
+      }
+    } catch (err) {
+      console.error('智能体初始化失败:', err)
+      this.addMessage({
+        type: 'assistant',
+        content: '您好！我是知心阿姨，有事没事咱都可以一块唠。'
+      })
+    }
+  },
+
+  // 用户交互
   onInput(e) {
     this.setData({
       inputValue: e.detail.value,
@@ -167,7 +207,7 @@ Page({
     })
 
     try {
-      const fullResponse = await this.getAIResponse(content)
+      const fullResponse = await this.getBotResponse(content)
       this.addMessage({
         type: 'assistant',
         content: fullResponse
@@ -184,54 +224,36 @@ Page({
     }
   },
 
-  async getAIResponse(content) {
-    wx.cloud.init({ env: "zhiyu-1gumpjete2a88c59" })
-    const model = wx.cloud.extend.AI.createModel("deepseek")
-    
-    const systemPrompt = `你是一位带有赵本山式唠嗑风格的育儿专家，我会带着对孩子的一些困扰来请教你，你可以通过询问来着推理这些困扰的根源所在，并对症下药给出建议。\n
-    一步一步去思考如何询问去找到困扰的根源，并在找到可能的根源后给出合适的建议。例如：收到类似“孩子不听我的话”的困扰时：\n
-    可以试着引导家长反思自身问题。询问家长语气是否恰当，并说明语气在沟通中的重要性，如果家长承认语气有问题，那么可以给出如何改善语气的建议；\n
-    也可以询问和困扰高度相关的信息。如问“是说啥都不听吗？还是只在学习，做家务等特定话题就不听了”，若家长承认只在学习话题上不听话，那么可以再次询问孩子在学校，家里的学习表现，来推测孩子是否有厌学情绪，并给家长提供如何行动去重新建立在学习话题上的沟通并消减孩子的厌学情绪。\n
-    要求：1.每次回复最多一个问题\n
-    2.带有建议的回复字数不超过200字，不带有建议的回复不超过70字\n
-    3.在交谈中显露出同理心\n
-    4.回复可以添加emoji来增加亲切感\n
-    5.指出我的（`
+  async getBotResponse(content) {
+    try {
+      const res = await wx.cloud.extend.AI.bot.sendMessage({
+        data: {
+          botId: BOT_ID,
+          msg: this.cleanMessage(content)
+        }
+      })
 
-    const res = await model.streamText({
-      data: {
-        model: "deepseek-v3",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...this.buildContextMessages(),
-          { role: "user", content: this.cleanMessage(content) }
-        ],
-        temperature: 0.7,
-        max_tokens: 150
+      let fullResponse = ''
+      for await (let event of res.eventStream) {
+        if (event.data === '[DONE]') break
+        
+        try {
+          const data = JSON.parse(event.data)
+          // 合并思维链和内容
+          fullResponse += (data.reasoning_content || '') + (data.content || '')
+        } catch (e) {
+          console.error('数据解析错误:', e)
+        }
       }
-    })
-
-    let fullResponse = ''
-    for await (const event of res.eventStream) {
-      if (event.data === '[DONE]') break
-      const data = JSON.parse(event.data)
-      const chunk = data?.choices?.[0]?.delta?.content || ''
-      fullResponse += this.cleanMessage(chunk)
+      
+      return fullResponse.trim()
+    } catch (err) {
+      console.error('智能体调用失败:', err)
+      throw new Error('服务暂时不可用，请稍后再试')
     }
-    return fullResponse.trim()
   },
 
-  buildContextMessages() {
-    return this.data.messages
-      .slice(-4)
-      .filter(msg => msg.content.trim().length > 0)
-      .map(msg => ({
-        role: msg.type === 'user' ? 'user' : 'assistant',
-        content: this.cleanMessage(msg.content)
-      }))
-  },
-
-  // 图片下载方法保持不变
+  // 图片处理
   downloadBackgroundImage() {
     wx.cloud.downloadFile({
       fileID: 'cloud://zhiyu-1gumpjete2a88c59.7a68-zhiyu-1gumpjete2a88c59-1339882768/images/background.png',
