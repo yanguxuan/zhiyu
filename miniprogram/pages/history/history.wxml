@@ -1,20 +1,25 @@
 <view class="container">
   <view class="header">
     <text class="title">历史对话</text>
-    <van-button type="primary" size="small" bind:tap="startNewChat">开始新对话</van-button>
+    <view class="batch-delete" bindtap="toggleBatchDelete">
+      <text class="iconfont icon-icon-test4"></text>
+    </view>
   </view>
 
   <view class="history-list" wx:if="{{!loading}}">
     <block wx:if="{{historyList.length > 0}}">
       <view class="history-item" wx:for="{{historyList}}" wx:key="_id">
-        <view class="item-content" bind:tap="continueChat" data-chat-id="{{item._id}}">
+        <view class="checkbox" wx:if="{{isBatchDelete}}" catch:tap="toggleSelect" data-index="{{index}}">
+          <view class="{{item.selected ? 'checked' : ''}}"></view>
+        </view>
+        <view class="item-content" bind:tap="{{isBatchDelete ? 'toggleSelect' : 'continueChat'}}" data-chat-id="{{item._id}}" data-index="{{index}}">
           <view class="item-header">
             <text class="item-title">{{item.title}}</text>
             <text class="item-date">{{item.createTime}}</text>
           </view>
           <view class="item-preview">{{item.lastMessage}}</view>
         </view>
-        <view class="delete-btn" catch:tap="deleteChat" data-chat-id="{{item._id}}">
+        <view class="delete-btn" catch:tap="deleteChat" data-chat-id="{{item._id}}" wx:if="{{!isBatchDelete}}">
           <van-icon name="delete" color="#ff4444" size="20px" />
         </view>
       </view>
@@ -26,5 +31,13 @@
 
   <view class="loading" wx:else>
     <van-loading type="spinner" />
+  </view>
+
+  <view class="batch-delete-bar" wx:if="{{isBatchDelete}}">
+    <view class="select-all" bindtap="selectAll">
+      <view class="checkbox {{isAllSelected ? 'checked' : ''}}"></view>
+      <text>全选</text>
+    </view>
+    <view class="delete-selected" bindtap="deleteSelected">删除选中</view>
   </view>
 </view> 
