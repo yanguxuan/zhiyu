@@ -7,9 +7,8 @@ Page({
    * 页面的初始数据
    */
   data: {
+    dolphinLogoPath: '',
     userInfo: null,
-    informationEnterImagePath: '', // 用于存储下载后的 information-enter 图片路径
-    cloudImageUrl: '', // 用于存储下载的图片路径
     isNavOpen: false
   },
 
@@ -30,11 +29,8 @@ Page({
       userInfo
     })
 
-    // 下载 information-enter 图片
-    this.downloadInformationEnterImage();
-
-    // 下载云端图片
-    this.downloadCloudImage();
+    // 下载 dolphin_logo
+    this.downloadDolphinLogo();
   },
 
   /**
@@ -128,39 +124,6 @@ Page({
     });
   },
 
-  downloadInformationEnterImage: function() {
-    const fileID = 'cloud://zhiyu-1gumpjete2a88c59.7a68-zhiyu-1gumpjete2a88c59-1339882768/images/information-enter.png'; // 替换为您的文件 ID
-
-    wx.cloud.downloadFile({
-      fileID: fileID,
-      success: res => {
-        console.log('下载成功，临时文件路径:', res.tempFilePath);
-        this.setData({
-          informationEnterImagePath: res.tempFilePath // 将临时文件路径存储到页面数据中
-        });
-      },
-      fail: err => {
-        console.error('下载失败:', err);
-      }
-    });
-  },
-
-  downloadCloudImage: function() {
-    const fileID = 'cloud://zhiyu-1gumpjete2a88c59.7a68-zhiyu-1gumpjete2a88c59-1339882768/images/history-enter.png'; // 替换为你的云端文件ID
-
-    wx.cloud.downloadFile({
-      fileID: fileID,
-      success: res => {
-        this.setData({
-          cloudImageUrl: res.tempFilePath // 设置下载的图片路径
-        });
-      },
-      fail: err => {
-        console.error('下载文件失败', err);
-      }
-    });
-  },
-  
   // 跳转到历史对话
   goToHistory() {
     wx.navigateTo({
@@ -199,6 +162,20 @@ Page({
     });
     this.setData({
       isNavOpen: false
+    });
+  },
+
+  downloadDolphinLogo() {
+    wx.cloud.downloadFile({
+      fileID: 'cloud://zhiyu-1gumpjete2a88c59.7a68-zhiyu-1gumpjete2a88c59-1339882768/images/dolphin_logo.png',
+      success: res => {
+        this.setData({
+          dolphinLogoPath: res.tempFilePath
+        });
+      },
+      fail: err => {
+        console.error('海豚logo下载失败:', err);
+      }
     });
   },
 })

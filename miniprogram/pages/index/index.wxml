@@ -1,8 +1,9 @@
 <!--pages/index/index.wxml-->
 <view class="container">
   <view class="content">
-    <view class="welcome-text">DeepCare</view>
-    <view class="tip-text" style="position: relative; left: 0rpx; top: 366rpx">您的亲子沟通好帮手</view>
+    <image class="dolphin-logo" src="{{dolphinLogoPath}}" mode="aspectFit" wx:if="{{dolphinLogoPath}}" style="width: 406rpx; height: 370rpx; display: inline-block; box-sizing: border-box; left: 337rpx; top: 37rpx; position: absolute"></image>
+    <view class="welcome-text" style="position: relative; left: 0rpx; top: 335rpx">DeepCare</view>
+    <view class="tip-text" style="position: relative; left: 0rpx; top: 309rpx">您的亲子沟通好帮手</view>
   </view>
 
   <view class="information-enter-wrapper">
@@ -20,7 +21,7 @@
     <view class="divider"></view>
   </view>
 
-  <view class="action-buttons" style="position: fixed; bottom: 20px; width: 100%; left: 225rpx; top: 48rpx">
+  <view class="action-buttons" style="position: fixed; bottom: 20px; width: 100%; left: 225rpx; top: 47rpx">
     
     <image class="info-button" src="{{cloudImageUrl}}"bindtap="goToHistory" mode="aspectFill" style="left: 629rpx; top: 189rpx; position: relative"></image>
 

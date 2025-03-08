@@ -17,12 +17,25 @@
   margin-bottom: 80rpx;
 }
 
+.dolphin-logo {
+  width: 200rpx;
+  height: 200rpx;
+  position: absolute;
+  top: 100rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  animation: fadeIn 1s ease-out;
+}
+
 .welcome-text {
   font-size: 40rpx;
   color: #333;
   font-weight: bold;
   margin-bottom: 20rpx;
-  position: relative;
+  position: absolute;
+  width: 100%;
+  z-index: 1;
   animation: dropDown 1.5s ease-out forwards;
   opacity: 0;
 }
@@ -37,7 +50,7 @@
     opacity: 1;
   }
   100% {
-    top: 25vh;
+    top: 300rpx;
     font-size: 60rpx;
     opacity: 1;
   }
