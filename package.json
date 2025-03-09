@@ -1,7 +1,7 @@
 {
   "name": "zhiyu-miniprogram",
   "version": "1.0.0",
-  "description": "知心阿姨小程序",
+  "description": "Deepcare小程序",
   "main": "app.js",
   "dependencies": {
     "@vant/weapp": "^1.10.19"
