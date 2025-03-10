@@ -196,7 +196,7 @@ Page({
   },
 
   downloadLogoImage: function() {
-    const fileID = 'cloud://zhiyu-1gumpjete2a88c59.7a68-zhiyu-1gumpjete2a88c59-1339882768/images/logo.png'; // 替换为您的文件 ID
+    const fileID = '	cloud://zhiyu-1gumpjete2a88c59.7a68-zhiyu-1gumpjete2a88c59-1339882768/images/dolphin_logo.png'; // 替换为您的文件 ID
 
     wx.cloud.downloadFile({
       fileID: fileID,

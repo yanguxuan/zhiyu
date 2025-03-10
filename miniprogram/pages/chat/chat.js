@@ -98,7 +98,8 @@ Page({
           messages: result.data.messages.map(msg => ({
             ...msg,
             content: this.cleanMessage(msg.content),
-            createTime: msg.createTime ? new Date(msg.createTime) : new Date()
+            createTime: msg.createTime ? new Date(msg.createTime) : new Date(),
+            metadata: msg.metadata || {}
           }))
         }, this.scrollToBottom);
       }
@@ -109,21 +110,32 @@ Page({
   },
 
   async saveChat() {
-    try {
-      await wx.cloud.callFunction({
-        name: 'saveHistoryChat',
-        data: {
-          action: 'update',
-          chatId: this.data.chatId,
-          messages: this.data.messages.map(msg => ({
-            ...msg,
-            content: this.cleanMessage(msg.content),
-            createTime: msg.createTime || new Date()
-          }))
-        }
-      });
-    } catch (error) {
-      console.error('保存失败:', error);
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        await wx.cloud.callFunction({
+          name: 'saveHistoryChat',
+          data: {
+            action: 'update',
+            chatId: this.data.chatId,
+            messages: this.data.messages.map(msg => ({
+              ...msg,
+              content: this.cleanMessage(msg.content),
+              createTime: msg.createTime || new Date(),
+              metadata: {
+                ...msg.metadata,
+                botId: this.data.currentStage.id,
+                stage: this.data.currentStage.name
+              }
+            }))
+          }
+        });
+        return;
+      } catch (error) {
+        console.error(`保存失败，剩余重试次数${retries}`, error);
+        retries--;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
   },
 
@@ -134,7 +146,12 @@ Page({
       content: this.cleanMessage(message.content),
       createTime: new Date(),
       isQuestionTip: message.isQuestionTip || false,
-      selectable: true // 新增可选中属性
+      selectable: true,
+      metadata: {
+        botId: this.data.currentStage.id,
+        stage: this.data.currentStage.name,
+        timestamp: Date.now()
+      }
     };
 
     this.setData({
@@ -218,7 +235,6 @@ Page({
 
   getContextHistory() {
     return this.data.messages
-      .slice(-5)
       .filter(msg => !msg.isSystem)
       .map(msg => ({
         role: msg.type === 'user' ? 'user' : 'assistant',
@@ -236,15 +252,21 @@ Page({
     const currentIndex = stageOrder.findIndex(s => s.id === this.data.currentStage.id);
     
     if (currentIndex < stageOrder.length - 1) {
-      const nextStage = stageOrder[currentIndex + 1];
-      console.log(`🔄 切换到 ${nextStage.name} 阶段，智能体ID: ${nextStage.id}`);
+      await this.saveChat();
+      await this.loadHistoryChat(this.data.chatId);
       
+      const nextStage = stageOrder[currentIndex + 1];
       this.setData({
         currentStage: nextStage,
         stageProgress: 0
       });
 
       await this.addTransitionMessage(nextStage);
+      this.addMessage({
+        type: 'system',
+        content: `当前阶段：${nextStage.name}，已加载${this.data.messages.length}条上下文`,
+        selectable: true
+      });
     }
   },
 
@@ -331,7 +353,9 @@ Page({
         data: {
           botId,
           msg: this.cleanMessage(content),
-          history: botId === AGENT_CONFIG.SUMMARY.id ? [] : history
+          history: botId === AGENT_CONFIG.SUMMARY.id ? 
+            this.getSummaryContext() : 
+            history
         }
       });
 
@@ -341,7 +365,11 @@ Page({
         
         try {
           const data = JSON.parse(event.data);
-          fullResponse += (data.reasoning_content || '') + (data.content || '');
+          fullResponse += data.content || '';
+          
+          if (app.globalData.debugMode && data.reasoning_content) {
+            console.debug('[REASONING]', data.reasoning_content);
+          }
         } catch (e) {
           console.error('数据解析错误:', e);
         }
@@ -352,6 +380,15 @@ Page({
       console.error('智能体调用失败:', err);
       return '服务暂时不可用，请稍后再试';
     }
+  },
+
+  getSummaryContext() {
+    return this.data.messages
+      .filter(msg => msg.selectable)
+      .map(msg => ({
+        role: msg.type === 'user' ? 'user' : 'assistant',
+        content: msg.content
+      }));
   },
 
   downloadBackgroundImage() {
@@ -366,7 +403,7 @@ Page({
 
   downloadLogoImage() {
     wx.cloud.downloadFile({
-      fileID: 'cloud://zhiyu-1gumpjete2a88c59.7a68-zhiyu-1gumpjete2a88c59-1339882768/images/logo.png',
+      fileID: 'cloud://zhiyu-1gumpjete2a88c59.7a68-zhiyu-1gumpjete2a88c59-1339882768/images/dolphin_logo.png',
       success: res => {
         this.setData({ logoPath: res.tempFilePath });
       },

@@ -18,7 +18,7 @@
                style="position: relative; left: -20rpx; top: 0rpx"/>
         <view class="message-content" style="position: relative; left: -20rpx; top: 0rpx">
           <!-- 仅增加selectable属性 -->
-          <text selectable>{{item.content}}</text>
+          <text user-select>{{item.content}}</text>
         </view>
       </view>
     </scroll-view>
