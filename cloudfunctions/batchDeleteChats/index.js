@@ -23,39 +23,58 @@ exports.main = async (event, context) => {
   
   try {
     // 批量删除聊天记录
-    const deletePromises = chatIds.map(async (chatId) => {
+    const deleteResults = [];
+    
+    // 逐个删除聊天记录
+    for (const chatId of chatIds) {
       try {
-        await db.collection('chats').doc(chatId).remove();
-        console.log(`成功删除聊天: ${chatId}`);
-        return { chatId, success: true };
+        // 先检查记录是否存在
+        const chat = await db.collection('chatHistory').doc(chatId).get();
+        console.log(`找到聊天记录: ${chatId}`, chat);
+        
+        // 执行删除操作 - 使用正确的集合名称 chatHistory 而不是 chats
+        const deleteResult = await db.collection('chatHistory').doc(chatId).remove();
+        console.log(`成功删除聊天: ${chatId}`, deleteResult);
+        
+        if (deleteResult.stats && deleteResult.stats.removed > 0) {
+          deleteResults.push({ chatId, success: true });
+        } else {
+          console.error(`删除聊天失败 ${chatId}: 没有记录被删除`);
+          deleteResults.push({ chatId, success: false, error: '没有记录被删除' });
+        }
       } catch (err) {
         console.error(`删除聊天失败 ${chatId}:`, err);
-        return { chatId, success: false, error: err };
+        deleteResults.push({ chatId, success: false, error: err });
       }
-    });
+    }
     
     // 如果需要删除关联的报告
     if (deleteReports) {
       try {
-        // 查询关联的报告
-        const { data: reports } = await db.collection('reports')
-          .where({
-            chatId: db.command.in(chatIds)
-          })
-          .get();
-        
-        console.log(`找到 ${reports ? reports.length : 0} 个关联报告需要删除`);
-        
-        // 删除关联的报告
-        if (reports && reports.length > 0) {
-          const reportIds = reports.map(report => report._id);
-          for (const reportId of reportIds) {
-            try {
-              await db.collection('reports').doc(reportId).remove();
-              console.log(`成功删除报告: ${reportId}`);
-            } catch (err) {
-              console.error(`删除报告失败 ${reportId}:`, err);
+        // 查询关联的报告 - 使用正确的集合名称，可能是 analysisReports
+        for (const chatId of chatIds) {
+          try {
+            const { data: reports } = await db.collection('user_imf')
+              .where({
+                chatId: chatId
+              })
+              .get();
+            
+            console.log(`找到 ${reports ? reports.length : 0} 个关联报告需要删除，chatId: ${chatId}`);
+            
+            // 删除关联的报告
+            if (reports && reports.length > 0) {
+              for (const report of reports) {
+                try {
+                  const deleteReportResult = await db.collection('user_imf').doc(report._id).remove();
+                  console.log(`成功删除报告: ${report._id}`, deleteReportResult);
+                } catch (err) {
+                  console.error(`删除报告失败 ${report._id}:`, err);
+                }
+              }
             }
+          } catch (err) {
+            console.error(`查询报告失败，chatId: ${chatId}`, err);
           }
         }
       } catch (err) {
@@ -63,9 +82,8 @@ exports.main = async (event, context) => {
       }
     }
     
-    // 等待所有删除操作完成
-    const results = await Promise.all(deletePromises);
-    const successCount = results.filter(r => r.success).length;
+    // 统计删除结果
+    const successCount = deleteResults.filter(r => r.success).length;
     
     return {
       code: 0,
@@ -73,7 +91,8 @@ exports.main = async (event, context) => {
       data: {
         total: chatIds.length,
         success: successCount,
-        failed: chatIds.length - successCount
+        failed: chatIds.length - successCount,
+        results: deleteResults
       }
     }
   } catch (error) {

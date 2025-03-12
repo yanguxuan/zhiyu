@@ -97,12 +97,10 @@ Page({
   // 时间格式化
   formatTime(timestamp) {
     if (!timestamp) return '未知时间';
-    
     // 确保timestamp是Date对象
     const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
     if (isNaN(date.getTime())) return '未知时间'; // 处理无效日期
     
-    // 格式化为 月/日 时:分
     return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
   },
 
@@ -116,77 +114,6 @@ Page({
     this.setData({
       loading: false,
       historyList: []
-    });
-  },
-
-  // 删除单条对话
-  async deleteChat(e) {
-    const { chatId } = e.currentTarget.dataset;
-    if (!this.validateChatId(chatId)) return;
-
-    try {
-      const res = await wx.showModal({
-        title: '确认删除',
-        content: '将永久删除该对话及其分析报告',
-        confirmColor: '#ff4444'
-      });
-
-      if (res.confirm) {
-        await this.executeDelete(chatId);
-        this.updateListAfterDeletion(chatId);
-      }
-    } catch (error) {
-      this.handleDeleteError(error);
-    }
-  },
-
-  // 执行删除操作
-  async executeDelete(chatId) {
-    wx.showLoading({ title: '删除中...' });
-    try {
-      // 调用云函数删除聊天记录
-      const { result } = await wx.cloud.callFunction({
-        name: 'deleteHistoryChat',
-        data: { 
-          chatId,
-          deleteReport: true // 同步删除关联报告
-        }
-      });
-      
-      console.log('删除结果:', result);
-      
-      if (!result || result.code !== 0) {
-        throw new Error(result?.message || '删除失败');
-      }
-      
-      wx.hideLoading();
-      return true;
-    } catch (error) {
-      console.error('删除请求失败:', error);
-      wx.hideLoading();
-      throw error;
-    }
-  },
-
-  // 更新列表状态
-  updateListAfterDeletion(chatId) {
-    this.setData({
-      historyList: this.data.historyList.filter(item => item._id !== chatId)
-    });
-    wx.showToast({
-      title: '删除成功',
-      icon: 'success',
-      duration: 1500
-    });
-  },
-
-  // 处理删除错误
-  handleDeleteError(error) {
-    console.error('删除失败:', error);
-    wx.hideLoading();
-    wx.showToast({
-      title: error.errMsg || '删除失败',
-      icon: 'error'
     });
   },
 

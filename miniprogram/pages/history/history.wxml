@@ -29,13 +29,6 @@
             <text class="item-update-time">更新于: {{formatTime(item.updateTime)}}</text>
           </view>
         </view>
-        
-        <!-- 操作按钮，只在非批量删除模式下显示 -->
-        <view class="item-actions" wx:if="{{!isBatchDelete}}">
-          <view class="delete-btn" catchtap="deleteChat" data-chat-id="{{item._id}}">
-            <icon type="clear" size="20" color="#999"/>
-          </view>
-        </view>
       </view>
     </block>
     <view class="empty-state" wx:else>

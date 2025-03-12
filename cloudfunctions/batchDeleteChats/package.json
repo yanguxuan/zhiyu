@@ -1,7 +1,7 @@
 {
-  "name": "batchdeletechats",
+  "name": "batchDeleteChats",
   "version": "1.0.0",
-  "description": "批量删除聊天记录",
+  "description": "批量删除历史聊天记录",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
