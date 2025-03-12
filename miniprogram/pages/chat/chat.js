@@ -59,6 +59,13 @@ Page({
     clearTimeout(this.summaryTimer);
   },
 
+  // 添加onHide生命周期函数，确保用户切换页面时也保存聊天记录
+  onHide() {
+    if (this.data.messages.length > 0 && !this.data.isHistory) {
+      this.saveChat();
+    }
+  },
+
   generateChatId() {
     return `chat_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
   },
@@ -113,11 +120,30 @@ Page({
     let retries = 3;
     while (retries > 0) {
       try {
+        // 添加title字段，用于在历史记录页面显示
+        const firstUserMsg = this.data.messages.find(msg => msg.type === 'user');
+        const title = firstUserMsg ? 
+          (firstUserMsg.content.length > 20 ? 
+            firstUserMsg.content.substring(0, 20) + '...' : 
+            firstUserMsg.content) : 
+          '新对话';
+        
+        // 获取最后一条消息用于预览
+        const lastMsg = this.data.messages[this.data.messages.length - 1];
+        const lastMessage = lastMsg ? 
+          (lastMsg.content.length > 30 ? 
+            lastMsg.content.substring(0, 30) + '...' : 
+            lastMsg.content) : 
+          '';
+
         await wx.cloud.callFunction({
           name: 'saveHistoryChat',
           data: {
             action: 'update',
             chatId: this.data.chatId,
+            title: title,
+            lastMessage: lastMessage,
+            createTime: new Date(),
             messages: this.data.messages.map(msg => ({
               ...msg,
               content: this.cleanMessage(msg.content),

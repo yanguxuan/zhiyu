@@ -9,18 +9,32 @@
   <view class="history-list" wx:if="{{!loading}}">
     <block wx:if="{{historyList.length > 0}}">
       <view class="history-item" wx:for="{{historyList}}" wx:key="_id">
-        <view class="checkbox" wx:if="{{isBatchDelete}}" catch:tap="toggleSelect" data-index="{{index}}">
-          <view class="{{item.selected ? 'checked' : ''}}"></view>
+        <!-- 只在批量删除模式下显示选择框 -->
+        <view class="select-checkbox {{item.selected ? 'selected' : ''}}" 
+              catchtap="toggleSelect" 
+              data-index="{{index}}"
+              wx:if="{{isBatchDelete}}">
+          <icon type="success" size="16" color="#ffffff" wx:if="{{item.selected}}"/>
         </view>
-        <view class="item-content" bind:tap="{{isBatchDelete ? 'toggleSelect' : 'continueChat'}}" data-chat-id="{{item._id}}" data-index="{{index}}">
+        
+        <!-- 其他内容 -->
+        <view class="item-content" bindtap="{{isBatchDelete ? 'toggleSelect' : 'continueChat'}}" data-index="{{index}}" data-chat-id="{{item._id}}">
           <view class="item-header">
             <text class="item-title">{{item.title}}</text>
-            <text class="item-date">{{item.createTime}}</text>
+            <text class="item-date">创建于: {{formatTime(item.createTime)}}</text>
           </view>
           <view class="item-preview">{{item.lastMessage}}</view>
+          <view class="item-footer">
+            <text class="item-stage">{{item.stage}}</text>
+            <text class="item-update-time">更新于: {{formatTime(item.updateTime)}}</text>
+          </view>
         </view>
-        <view class="delete-btn" catch:tap="deleteChat" data-chat-id="{{item._id}}" wx:if="{{!isBatchDelete}}">
-          <van-icon name="delete" color="#ff4444" size="20px" />
+        
+        <!-- 操作按钮，只在非批量删除模式下显示 -->
+        <view class="item-actions" wx:if="{{!isBatchDelete}}">
+          <view class="delete-btn" catchtap="deleteChat" data-chat-id="{{item._id}}">
+            <icon type="clear" size="20" color="#999"/>
+          </view>
         </view>
       </view>
     </block>
@@ -33,11 +47,14 @@
     <van-loading type="spinner" />
   </view>
 
+  <!-- 批量删除底部栏 -->
   <view class="batch-delete-bar" wx:if="{{isBatchDelete}}">
     <view class="select-all" bindtap="selectAll">
-      <view class="checkbox {{isAllSelected ? 'checked' : ''}}"></view>
+      <view class="select-checkbox {{isAllSelected ? 'selected' : ''}}">
+        <icon type="success" size="16" color="#ffffff" wx:if="{{isAllSelected}}"/>
+      </view>
       <text>全选</text>
     </view>
-    <view class="delete-selected" bindtap="deleteSelected">删除选中</view>
+    <view class="delete-selected" bindtap="deleteSelected">删除选中({{selectedCount}})</view>
   </view>
-</view> 
+</view>
