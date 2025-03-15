@@ -19,14 +19,15 @@
         
         <!-- 其他内容 -->
         <view class="item-content" bindtap="{{isBatchDelete ? 'toggleSelect' : 'continueChat'}}" data-index="{{index}}" data-chat-id="{{item._id}}">
+          <!-- 修改时间显示部分，直接使用原始时间字段 -->
           <view class="item-header">
             <text class="item-title">{{item.title}}</text>
-            <text class="item-date">创建于: {{formatTime(item.createTime)}}</text>
+            <!-- 删除 createTime 的显示 -->
           </view>
           <view class="item-preview">{{item.lastMessage}}</view>
           <view class="item-footer">
             <text class="item-stage">{{item.stage}}</text>
-            <text class="item-update-time">更新于: {{formatTime(item.updateTime)}}</text>
+            <text class="item-update-time">{{item.updateTime}}</text>
           </view>
         </view>
       </view>

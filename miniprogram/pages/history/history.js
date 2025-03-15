@@ -53,12 +53,17 @@ Page({
           title: chat.title || this.extractTitleFromMessages(chat.messages),
           stage: this.extractStageFromMessages(chat.messages),
           lastMessage: this.formatLastMessage(chat.messages[chat.messages.length - 1]),
-          createTime: new Date(chat.createTime || Date.now()),
-          updateTime: new Date(chat.updateTime || chat.createTime || Date.now()), // 确保updateTime有值
+          // 只保留 updateTime，但仍然使用 createTime 作为备用
+          updateTime: chat.updateTime || chat.createTime || '未知时间',
           avatar: this.data.currentUser?.avatar || '/images/default_avatar.png',
           selected: false
         }))
-        .sort((a, b) => b.updateTime - a.updateTime); // 按更新时间排序
+        // 保持排序逻辑不变
+        .sort((a, b) => {
+          const aTime = a.updateTime || '';
+          const bTime = b.updateTime || '';
+          return aTime > bTime ? -1 : 1;
+        });
   
       this.setData({
         historyList: validChats,
@@ -97,11 +102,18 @@ Page({
   // 时间格式化
   formatTime(timestamp) {
     if (!timestamp) return '未知时间';
-    // 确保timestamp是Date对象
-    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
-    if (isNaN(date.getTime())) return '未知时间'; // 处理无效日期
     
-    return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+    try {
+      // 确保timestamp是Date对象
+      const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+      if (isNaN(date.getTime())) return '未知时间'; // 处理无效日期
+      
+      // 格式化为 月/日 时:分 的形式
+      return `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+    } catch (error) {
+      console.error('时间格式化错误:', error, timestamp);
+      return '未知时间';
+    }
   },
 
   // 处理数据错误

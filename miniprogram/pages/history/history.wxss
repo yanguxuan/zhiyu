@@ -50,9 +50,61 @@
   color: #333;
 }
 
-.item-date {
-  font-size: 24rpx;
+/* 修改时间显示样式，确保完整显示 */
+.item-date, .item-update-time {
+  font-size: 22rpx;
   color: #999;
+  overflow: visible;
+  word-break: break-all;
+  max-width: 60%;
+  text-align: right;
+}
+
+.item-header, .item-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.item-title {
+  font-size: 32rpx;
+  font-weight: 500;
+  color: #333;
+  max-width: 40%;
+}
+
+.item-stage {
+  font-size: 24rpx;
+  color: #07c160;
+  background-color: rgba(7, 193, 96, 0.1);
+  padding: 4rpx 10rpx;
+  border-radius: 6rpx;
+  max-width: 40%;
+}
+
+/* 确保预览文本不会挤压时间显示 */
+.item-preview {
+  margin: 10rpx 0;
+  font-size: 28rpx;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* 确保舞台信息不会挤压更新时间 */
+.item-stage {
+  font-size: 24rpx;
+  color: #007aff;
+  background-color: rgba(0, 122, 255, 0.1);
+  padding: 2rpx 10rpx;
+  border-radius: 10rpx;
+  max-width: 150rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .item-preview {

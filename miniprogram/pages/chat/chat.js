@@ -54,7 +54,13 @@ Page({
 
   onUnload() {
     if (this.data.messages.length > 0) {
-      this.saveChat();
+      if (this.data.messages.length === 1) {
+        // 如果只有一条消息，删除这个聊天记录
+        this.deleteChat();
+      } else {
+        // 有多条消息，正常保存
+        this.saveChat();
+      }
     }
     clearTimeout(this.summaryTimer);
   },
@@ -62,7 +68,13 @@ Page({
   // 添加onHide生命周期函数，确保用户切换页面时也保存聊天记录
   onHide() {
     if (this.data.messages.length > 0 && !this.data.isHistory) {
-      this.saveChat();
+      if (this.data.messages.length === 1) {
+        // 如果只有一条消息，删除这个聊天记录
+        this.deleteChat();
+      } else {
+        // 有多条消息，正常保存
+        this.saveChat();
+      }
     }
   },
 
@@ -435,5 +447,24 @@ Page({
       },
       fail: err => console.error('LOGO下载失败:', err)
     });
+  },
+  
+  // 添加删除聊天记录的方法
+  async deleteChat() {
+    // 历史记录不删除
+    if (this.data.isHistory) return;
+    
+    try {
+      await wx.cloud.callFunction({
+        name: 'batchDeleteChats',
+        data: {
+          chatIds: [this.data.chatId],  // 修改为数组格式
+          deleteReports: true  // 同时删除关联的报告
+        }
+      });
+      console.log('已删除仅含单条消息的聊天记录:', this.data.chatId);
+    } catch (error) {
+      console.error('删除聊天记录失败:', error);
+    }
   }
 });
