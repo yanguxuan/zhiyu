@@ -60,7 +60,6 @@ Page({
         this.saveChat();
       }
     }
-    // 移除 clearTimeout(this.summaryTimer);
   },
 
   // 添加onHide生命周期函数，确保用户切换页面时也保存聊天记录
@@ -126,12 +125,10 @@ Page({
     }
   },
 
-  // 修改 saveChat 函数，添加 hasSummary 字段
   async saveChat() {
     let retries = 3;
     while (retries > 0) {
       try {
-        // 添加title字段，用于在历史记录页面显示
         const firstUserMsg = this.data.messages.find(msg => msg.type === 'user');
         const title = firstUserMsg ? 
           (firstUserMsg.content.length > 20 ? 
@@ -139,19 +136,12 @@ Page({
             firstUserMsg.content) : 
           '新对话';
         
-        // 获取最后一条消息用于预览
         const lastMsg = this.data.messages[this.data.messages.length - 1];
         const lastMessage = lastMsg ? 
           (lastMsg.content.length > 30 ? 
             lastMsg.content.substring(0, 30) + '...' : 
             lastMsg.content) : 
           '';
-
-        // 检查是否已有总结报告
-        const hasSummary = this.data.messages.some(msg => 
-          msg.type === 'assistant' && 
-          msg.content.includes('总结报告已生成')
-        );
 
         await wx.cloud.callFunction({
           name: 'saveHistoryChat',
@@ -161,7 +151,6 @@ Page({
             title: title,
             lastMessage: lastMessage,
             updateTime: new Date(),
-            hasSummary: hasSummary, // 添加标记字段
             messages: this.data.messages.map(msg => ({
               ...msg,
               content: this.cleanMessage(msg.content),
@@ -183,14 +172,6 @@ Page({
     }
   },
 
-  // 移除或简化 scheduleSummaryCheck 函数
-  scheduleSummaryCheck() {
-    // 不再在前端处理总结生成
-    // 云函数会定期检查并生成总结
-  },
-
-  // 移除 generateSummary、saveSummaryToCloud 和 parseSummaryTable 函数
-  // 这些逻辑已经移到云函数中
   addMessage(message) {
     const newMessage = {
       ...message,
@@ -266,14 +247,12 @@ Page({
     this.addMessage({ type: 'user', content, selectable: true });
 
     try {
-      // 如果是第一条用户消息，与开场白一起算作第一轮
       if (this.data.isFirstUserMessage) {
         this.setData({ 
           isFirstUserMessage: false,
-          stageProgress: 1 // 第一轮
+          stageProgress: 1
         });
       } else {
-        // 非第一条消息，每次用户发送消息后增加轮次计数
         this.setData({ stageProgress: this.data.stageProgress + 1 });
       }
 
@@ -311,7 +290,6 @@ Page({
   },
 
   async transitionAgent() {
-    // 简化阶段转换，直接从COLLECT到ADVISE
     const nextStage = AGENT_CONFIG.ADVISE;
     
     await this.saveChat();
@@ -321,80 +299,10 @@ Page({
       currentStage: nextStage,
       stageProgress: 0
     });
-
-    // 不添加过渡提示消息，直接加载上下文
-    this.addMessage({
-      type: 'system',
-      content: `当前阶段：${nextStage.name}，已加载${this.data.messages.length}条上下文`,
-      isSystem: true,
-      selectable: false // 设为不可选择，因为只是系统提示
-    });
   },
 
-  // 移除或简化 addTransitionMessage 函数
   async addTransitionMessage(stage) {
-    // 不再添加过渡消息
     return;
-  },
-
-  scheduleSummaryCheck() {
-    clearTimeout(this.summaryTimer);
-    this.summaryTimer = setTimeout(async () => {
-      if (Date.now() - this.data.lastActive > AGENT_CONFIG.SUMMARY.timeout) {
-        await this.generateSummary();
-      }
-    }, AGENT_CONFIG.SUMMARY.timeout);
-  },
-
-  async generateSummary() {
-    try {
-      const summary = await this.getBotResponse(
-        "生成总结报告", 
-        [], 
-        AGENT_CONFIG.SUMMARY.id
-      );
-      
-      await this.saveSummaryToCloud(summary);
-      this.addMessage({
-        type: 'assistant',
-        content: `📊总结报告已生成！\n${summary}`,
-        selectable: true
-      });
-    } catch (err) {
-      console.error('总结生成失败:', err);
-    }
-  },
-
-  async saveSummaryToCloud(summary) {
-    try {
-      await wx.cloud.callFunction({
-        name: 'saveUserInfo',
-        data: {
-          collection: 'user_imf',
-          data: {
-            userId: this.data.userInfo._id,
-            chatId: this.data.chatId,
-            summary: this.parseSummaryTable(summary),
-            timestamp: wx.cloud.database().serverDate()
-          }
-        }
-      });
-    } catch (err) {
-      console.error('云存储失败:', err);
-    }
-  },
-
-  parseSummaryTable(summary) {
-    return summary.split('\n')
-      .slice(2)
-      .filter(line => line.includes('|'))
-      .map(line => {
-        const cells = line.split('|').slice(1, -1);
-        return {
-          explicit: cells[0].trim(),
-          implicit: cells[1].trim()
-        };
-      });
   },
 
   async getBotResponse(content, history = [], specificBotId) {
@@ -405,7 +313,6 @@ Page({
           botId,
           msg: this.cleanMessage(content),
           history: history
-          // 移除 SUMMARY 相关的条件判断
         }
       });
 
@@ -432,9 +339,6 @@ Page({
     }
   },
 
-  // 移除 getSummaryContext 函数
-
-  // 优化背景图下载，添加错误处理
   downloadBackgroundImage() {
     // 检查WXML中是否实际使用了这个图片，如果没有使用可以移除此函数
     wx.cloud.downloadFile({
