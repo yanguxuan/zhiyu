@@ -1,10 +1,8 @@
 // pages/chat/chat.js
 const app = getApp();
 const AGENT_CONFIG = {
-  COLLECT: { id: "bot-5edc583e", threshold: 5, name: "信息收集" },
-  ANALYZE: { id: "bot-503ca8ed", threshold: 3, name: "分析诊断" },
-  ADVISE: { id: "bot-81d29121", name: "建议生成" },
-  SUMMARY: { id: "bot-8995acfa", timeout: 600000, name: "总结报告" }
+  COLLECT: { id: "bot-5edc583e", threshold: 7, name: "信息收集" }, // 修改阈值为7轮
+  ADVISE: { id: "bot-81d29121", name: "建议生成" }, // 直接从收集转到建议
 };
 
 Page({
@@ -19,8 +17,8 @@ Page({
     isHistory: false,
     isDisabled: true,
     currentStage: AGENT_CONFIG.COLLECT,
-    stageProgress: 0,
-    lastActive: Date.now()
+    stageProgress: 0, // 对话轮次计数
+    isFirstUserMessage: true, // 添加标记第一次用户消息的字段
   },
 
   onLoad(options) {
@@ -62,7 +60,7 @@ Page({
         this.saveChat();
       }
     }
-    clearTimeout(this.summaryTimer);
+    // 移除 clearTimeout(this.summaryTimer);
   },
 
   // 添加onHide生命周期函数，确保用户切换页面时也保存聊天记录
@@ -236,6 +234,8 @@ Page({
         content: agentInfo.welcomeMessage || '您好！我是育儿助手DeepCare~',
         selectable: true
       });
+      
+      // 不增加stageProgress，开场白不计入轮次
     } catch (err) {
       console.error('智能体初始化失败:', err);
       this.addMessage({
@@ -260,13 +260,23 @@ Page({
     this.setData({ 
       inputValue: '',
       loading: true,
-      lastActive: Date.now(),
       isDisabled: true
     });
 
     this.addMessage({ type: 'user', content, selectable: true });
 
     try {
+      // 如果是第一条用户消息，与开场白一起算作第一轮
+      if (this.data.isFirstUserMessage) {
+        this.setData({ 
+          isFirstUserMessage: false,
+          stageProgress: 1 // 第一轮
+        });
+      } else {
+        // 非第一条消息，每次用户发送消息后增加轮次计数
+        this.setData({ stageProgress: this.data.stageProgress + 1 });
+      }
+
       const response = await this.processStage(content);
       this.addMessage({ type: 'assistant', content: response, selectable: true });
 
@@ -278,13 +288,11 @@ Page({
       wx.showToast({ title: err.message || '发送失败', icon: 'none' });
     } finally {
       this.setData({ loading: false });
-      this.scheduleSummaryCheck();
     }
   },
 
   async processStage(content) {
     const history = this.getContextHistory();
-    this.setData({ stageProgress: this.data.stageProgress + 1 });
     return this.getBotResponse(content, history);
   },
 
@@ -303,42 +311,30 @@ Page({
   },
 
   async transitionAgent() {
-    const stageOrder = [AGENT_CONFIG.COLLECT, AGENT_CONFIG.ANALYZE, AGENT_CONFIG.ADVISE];
-    const currentIndex = stageOrder.findIndex(s => s.id === this.data.currentStage.id);
+    // 简化阶段转换，直接从COLLECT到ADVISE
+    const nextStage = AGENT_CONFIG.ADVISE;
     
-    if (currentIndex < stageOrder.length - 1) {
-      await this.saveChat();
-      await this.loadHistoryChat(this.data.chatId);
-      
-      const nextStage = stageOrder[currentIndex + 1];
-      this.setData({
-        currentStage: nextStage,
-        stageProgress: 0
-      });
+    await this.saveChat();
+    await this.loadHistoryChat(this.data.chatId);
+    
+    this.setData({
+      currentStage: nextStage,
+      stageProgress: 0
+    });
 
-      await this.addTransitionMessage(nextStage);
-      this.addMessage({
-        type: 'system',
-        content: `当前阶段：${nextStage.name}，已加载${this.data.messages.length}条上下文`,
-        selectable: true
-      });
-    }
+    // 不添加过渡提示消息，直接加载上下文
+    this.addMessage({
+      type: 'system',
+      content: `当前阶段：${nextStage.name}，已加载${this.data.messages.length}条上下文`,
+      isSystem: true,
+      selectable: false // 设为不可选择，因为只是系统提示
+    });
   },
 
+  // 移除或简化 addTransitionMessage 函数
   async addTransitionMessage(stage) {
-    const messages = {
-      [AGENT_CONFIG.ANALYZE.id]: "🔍咱这情况摸得差不离了，现在掰扯掰扯里头的道道...",
-      [AGENT_CONFIG.ADVISE.id]: "💡整明白了症结，合计合计咋下这剂猛药..."
-    };
-
-    if (messages[stage.id]) {
-      this.addMessage({
-        type: 'system',
-        content: messages[stage.id],
-        isSystem: true,
-        selectable: true
-      });
-    }
+    // 不再添加过渡消息
+    return;
   },
 
   scheduleSummaryCheck() {
@@ -408,9 +404,8 @@ Page({
         data: {
           botId,
           msg: this.cleanMessage(content),
-          history: botId === AGENT_CONFIG.SUMMARY.id ? 
-            this.getSummaryContext() : 
-            history
+          history: history
+          // 移除 SUMMARY 相关的条件判断
         }
       });
 
@@ -437,14 +432,7 @@ Page({
     }
   },
 
-  getSummaryContext() {
-    return this.data.messages
-      .filter(msg => msg.selectable)
-      .map(msg => ({
-        role: msg.type === 'user' ? 'user' : 'assistant',
-        content: msg.content
-      }));
-  },
+  // 移除 getSummaryContext 函数
 
   // 优化背景图下载，添加错误处理
   downloadBackgroundImage() {
