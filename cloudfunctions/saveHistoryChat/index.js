@@ -7,7 +7,7 @@ const db = cloud.database()
 // 云函数入口函数
 exports.main = async (event, context) => {
   const wxContext = cloud.getWXContext()
-  const { action, chatId, userInfo, messages, title, lastMessage, createTime } = event
+  const { action, chatId, userInfo, messages, title, lastMessage, updateTime, hasSummary } = event
   
   try {
     if (action === 'create') {
@@ -20,31 +20,22 @@ exports.main = async (event, context) => {
           messages: messages || [],
           title: title || '新对话',
           lastMessage: lastMessage || '',
-          createTime: createTime || db.serverDate(),
-          updateTime: db.serverDate()
+          createTime: db.serverDate(),
+          updateTime: db.serverDate(),
+          hasSummary: false // 初始化为false
         }
-      }).then(() => ({
-        code: 0,
-        message: '创建成功'
-      }))
+      })
     } else if (action === 'update') {
-      // 更新对话
+      // 更新现有对话
       return await db.collection('chatHistory').doc(chatId).update({
         data: {
           messages,
-          title: title || '对话记录',
+          title: title || '未命名对话',
           lastMessage: lastMessage || '',
-          updateTime: db.serverDate()
+          updateTime: db.serverDate(),
+          hasSummary: hasSummary || false // 添加hasSummary字段
         }
-      }).then(() => ({
-        code: 0,
-        message: '更新成功'
-      }))
-    }
-    
-    return {
-      code: -1,
-      message: '未知操作'
+      })
     }
   } catch (error) {
     console.error(error)

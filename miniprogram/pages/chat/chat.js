@@ -128,6 +128,7 @@ Page({
     }
   },
 
+  // 修改 saveChat 函数，添加 hasSummary 字段
   async saveChat() {
     let retries = 3;
     while (retries > 0) {
@@ -148,6 +149,12 @@ Page({
             lastMsg.content) : 
           '';
 
+        // 检查是否已有总结报告
+        const hasSummary = this.data.messages.some(msg => 
+          msg.type === 'assistant' && 
+          msg.content.includes('总结报告已生成')
+        );
+
         await wx.cloud.callFunction({
           name: 'saveHistoryChat',
           data: {
@@ -155,7 +162,8 @@ Page({
             chatId: this.data.chatId,
             title: title,
             lastMessage: lastMessage,
-            createTime: new Date(),
+            updateTime: new Date(),
+            hasSummary: hasSummary, // 添加标记字段
             messages: this.data.messages.map(msg => ({
               ...msg,
               content: this.cleanMessage(msg.content),
@@ -177,10 +185,19 @@ Page({
     }
   },
 
+  // 移除或简化 scheduleSummaryCheck 函数
+  scheduleSummaryCheck() {
+    // 不再在前端处理总结生成
+    // 云函数会定期检查并生成总结
+  },
+
+  // 移除 generateSummary、saveSummaryToCloud 和 parseSummaryTable 函数
+  // 这些逻辑已经移到云函数中
   addMessage(message) {
     const newMessage = {
       ...message,
       id: message.id || Date.now(),
+      chatId: this.data.chatId, // 添加chatId字段
       content: this.cleanMessage(message.content),
       createTime: new Date(),
       isQuestionTip: message.isQuestionTip || false,
@@ -273,7 +290,7 @@ Page({
 
   getContextHistory() {
     return this.data.messages
-      .filter(msg => !msg.isSystem)
+      .filter(msg => !msg.isSystem && msg.chatId === this.data.chatId)
       .map(msg => ({
         role: msg.type === 'user' ? 'user' : 'assistant',
         content: msg.content
@@ -429,23 +446,34 @@ Page({
       }));
   },
 
+  // 优化背景图下载，添加错误处理
   downloadBackgroundImage() {
+    // 检查WXML中是否实际使用了这个图片，如果没有使用可以移除此函数
     wx.cloud.downloadFile({
       fileID: 'cloud://zhiyu-1gumpjete2a88c59.7a68-zhiyu-1gumpjete2a88c59-1339882768/images/background.png',
       success: res => {
         this.setData({ backgroundImagePath: res.tempFilePath });
       },
-      fail: err => console.error('背景图下载失败:', err)
+      fail: err => {
+        console.error('背景图下载失败:', err);
+        // 设置默认背景或空值
+        this.setData({ backgroundImagePath: '' });
+      }
     });
   },
 
   downloadLogoImage() {
+    // 检查WXML中是否实际使用了这个图片，如果没有使用可以移除此函数
     wx.cloud.downloadFile({
       fileID: 'cloud://zhiyu-1gumpjete2a88c59.7a68-zhiyu-1gumpjete2a88c59-1339882768/images/dolphin_logo.png',
       success: res => {
         this.setData({ logoPath: res.tempFilePath });
       },
-      fail: err => console.error('LOGO下载失败:', err)
+      fail: err => {
+        console.error('LOGO下载失败:', err);
+        // 设置默认logo或空值
+        this.setData({ logoPath: '' });
+      }
     });
   },
   

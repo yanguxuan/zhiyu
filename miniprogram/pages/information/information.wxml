@@ -1,16 +1,189 @@
 <view class="container">
-  <view class="avatar-wrapper">
-    <image class="avatar" src="{{avatarUrl}}" mode="aspectFill"></image>
+  <!-- 用户信息部分 -->
+  <view class="user-info">
+    <image class="avatar" src="{{avatarUrl || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+    <view class="name">{{userInfo.nickName || '用户'}}</view>
   </view>
-  <view class="info">
-    <text class="nickname">{{userInfo.nickName}}</text>
-    <text class="email">{{userInfo.email}}</text>
-    <text class="phone">{{userInfo.phone}}</text>
+  
+  <!-- 家庭基本信息表格 -->
+  <view class="family-info">
+    <view class="section-title">家庭基本信息</view>
+    <view class="table-container">
+      <view class="table-row">
+        <view class="th">家庭成员数量</view>
+        <view class="td">
+          <input class="td-input" value="{{familyInfo.memberCount}}" data-field="memberCount" bindinput="updateFamilyInfo" placeholder="请输入" />
+        </view>
+      </view>
+      <view class="table-row">
+        <view class="th">孩子数量</view>
+        <view class="td">
+          <input class="td-input" value="{{familyInfo.childrenCount}}" data-field="childrenCount" bindinput="updateFamilyInfo" placeholder="请输入" />
+        </view>
+      </view>
+      <view class="table-row">
+        <view class="th">孩子性别</view>
+        <view class="td">
+          <input class="td-input" value="{{familyInfo.childrenGender}}" data-field="childrenGender" bindinput="updateFamilyInfo" placeholder="请输入" />
+        </view>
+      </view>
+      <view class="table-row">
+        <view class="th">父母关系状态</view>
+        <view class="td">
+          <input class="td-input" value="{{familyInfo.parentRelation}}" data-field="parentRelation" bindinput="updateFamilyInfo" placeholder="请输入" />
+        </view>
+      </view>
+    </view>
+  </view>
+  
+  <!-- 家庭详细信息 -->
+  <view class="detailed-family-info">
+    <view class="section-title">家庭详细信息</view>
+    
+    <!-- 家庭基础情况 -->
+    <view class="detail-table-container">
+      <view class="detail-section-title">家庭基础情况</view>
+      <view class="detail-row">
+        <view class="detail-label">家庭形式</view>
+        <picker class="detail-picker" bindchange="updateDetailedInfo" data-field="familyForm" value="{{detailedInfo.familyForm}}" range="{{familyFormOptions}}">
+          <view class="picker-text">{{detailedInfo.familyForm || '请选择家庭形式（正常/单亲/离异/重组等）'}}</view>
+        </picker>
+      </view>
+      <view class="detail-row">
+        <view class="detail-label">家庭结构</view>
+        <input class="detail-input" value="{{detailedInfo.familyStructure}}" data-field="familyStructure" bindinput="updateDetailedInfo" placeholder="请说明家庭主要决策者和权力结构" />
+      </view>
+      <view class="detail-row">
+        <view class="detail-label">居住情况</view>
+        <input class="detail-input" value="{{detailedInfo.livingCondition}}" data-field="livingCondition" bindinput="updateDetailedInfo" placeholder="请描述家庭居住环境和条件" />
+      </view>
+    </view>
+
+    <!-- 家庭成员信息 -->
+    <view class="detail-table-container">
+      <view class="detail-section-title">家庭成员信息</view>
+      <view class="detail-row">
+        <view class="detail-label">父亲情况</view>
+        <textarea class="detail-textarea" value="{{detailedInfo.fatherInfo}}" data-field="fatherInfo" bindinput="updateDetailedInfo" placeholder="年龄、职业、性格特点、收入情况等" />
+      </view>
+      <view class="detail-row">
+        <view class="detail-label">母亲情况</view>
+        <textarea class="detail-textarea" value="{{detailedInfo.motherInfo}}" data-field="motherInfo" bindinput="updateDetailedInfo" placeholder="年龄、职业、性格特点、收入情况等" />
+      </view>
+      <view class="detail-row">
+        <view class="detail-label">子女情况</view>
+        <textarea class="detail-textarea" value="{{detailedInfo.childrenInfo}}" data-field="childrenInfo" bindinput="updateDetailedInfo" placeholder="年龄、在读年级、性格特点、兴趣爱好等" />
+      </view>
+    </view>
+
+    <!-- 家庭关系 -->
+    <view class="detail-table-container">
+      <view class="detail-section-title">家庭关系</view>
+      <view class="detail-row">
+        <view class="detail-label">夫妻关系</view>
+        <textarea class="detail-textarea" value="{{detailedInfo.coupleRelation}}" data-field="coupleRelation" bindinput="updateDetailedInfo" placeholder="感情状况、沟通方式、矛盾处理等" />
+      </view>
+      <view class="detail-row">
+        <view class="detail-label">亲子关系</view>
+        <textarea class="detail-textarea" value="{{detailedInfo.parentChildRelation}}" data-field="parentChildRelation" bindinput="updateDetailedInfo" placeholder="互动方式、教育方式、沟通质量等" />
+      </view>
+    </view>
+
+    <!-- 子女发展 -->
+    <view class="detail-table-container">
+      <view class="detail-section-title">子女发展情况</view>
+      <view class="detail-row">
+        <view class="detail-label">学习情况</view>
+        <textarea class="detail-textarea" value="{{detailedInfo.studyStatus}}" data-field="studyStatus" bindinput="updateDetailedInfo" placeholder="学习成绩、学习态度、特长科目等" />
+      </view>
+      <view class="detail-row">
+        <view class="detail-label">社交情况</view>
+        <textarea class="detail-textarea" value="{{detailedInfo.socialStatus}}" data-field="socialStatus" bindinput="updateDetailedInfo" placeholder="人际关系、社交能力、课外活动等" />
+      </view>
+      <view class="detail-row">
+        <view class="detail-label">心理状况</view>
+        <textarea class="detail-textarea" value="{{detailedInfo.mentalStatus}}" data-field="mentalStatus" bindinput="updateDetailedInfo" placeholder="情绪表现、心理特点、行为习惯等" />
+      </view>
+    </view>
+
+    <!-- 家庭问题与对策 -->
+    <view class="detail-table-container">
+      <view class="detail-section-title">家庭问题与对策</view>
+      <view class="detail-row">
+        <view class="detail-label">主要问题</view>
+        <textarea class="detail-textarea" value="{{detailedInfo.mainProblems}}" data-field="mainProblems" bindinput="updateDetailedInfo" placeholder="目前家庭面临的主要问题和困扰" />
+      </view>
+      <view class="detail-row">
+        <view class="detail-label">解决方式</view>
+        <textarea class="detail-textarea" value="{{detailedInfo.problemSolving}}" data-field="problemSolving" bindinput="updateDetailedInfo" placeholder="家庭通常采用的问题解决方式和效果" />
+      </view>
+      <view class="detail-row">
+        <view class="detail-label">需求建议</view>
+        <textarea class="detail-textarea" value="{{detailedInfo.suggestions}}" data-field="suggestions" bindinput="updateDetailedInfo" placeholder="希望得到的帮助和建议" />
+      </view>
+    </view>
+  </view>
+  
+  <!-- 用户总结报告部分 -->
+  <view class="section-title">用户综合总结报告</view>
+  
+  <view wx:if="{{hasSummary}}" class="user-summary-container">
+    <!-- 表格部分 -->
+    <view class="user-summary-section">
+      <view class="user-summary-subtitle">用户行为分析</view>
+      <view class="summary-table-container">
+        <view class="summary-table-header">
+          <view class="summary-table-cell">显性行为</view>
+          <view class="summary-table-cell">隐性动机</view>
+        </view>
+        <!-- 动态渲染表格行 -->
+        <block wx:for="{{parsedSummary.behaviorTable}}" wx:key="index">
+          <view class="summary-table-row">
+            <view class="summary-table-cell">{{item.explicit}}</view>
+            <view class="summary-table-cell">{{item.implicit}}</view>
+          </view>
+        </block>
+      </view>
+    </view>
+    
+    <!-- 干预建议部分 -->
+    <view class="user-summary-section">
+      <view class="user-summary-subtitle">干预建议</view>
+      <view class="user-summary-content">
+        <text class="summary-text">{{parsedSummary.intervention}}</text>
+      </view>
+    </view>
+    
+    <!-- 知识应用部分 -->
+    <view wx:if="{{parsedSummary.knowledge}}" class="user-summary-section">
+      <view class="user-summary-subtitle">知识应用</view>
+      <view class="user-summary-content">
+        <text class="summary-text">{{parsedSummary.knowledge}}</text>
+      </view>
+    </view>
   </view>
 
-  <view class="info-box">
-    <text class="account-label">账户</text>
-    <text class="function-label" style="position: relative; left: -66rpx; top: 345rpx">功能</text>
-    <!-- 在这里添加用户信息内容 -->
+  <view wx:else class="no-user-summary">
+    <text>暂无总结报告</text>
+  </view>
+  <!-- 移除这个多余的结束标签 -->
+  <!-- </view> -->
+
+  <!-- 操作按钮 -->
+  <view class="action-area">
+    <view class="btn-group {{showButtons ? 'show' : ''}}">
+      <button class="action-btn save-btn" bindtap="saveFamilyInfo">
+        <text class="btn-text">保存信息</text>
+      </button>
+      <button class="action-btn family-btn" bindtap="generateFamilyInfo" loading="{{loadingFamilyInfo}}">
+        <text class="btn-text">分析家庭</text>
+      </button>
+      <button class="action-btn summary-btn" bindtap="navigateToSummary">
+        <text class="btn-text">生成报告</text>
+      </button>
+    </view>
+    <view class="main-btn" bindtap="toggleButtons">
+      <text class="main-btn-icon">+</text>
+    </view>
   </view>
 </view>
