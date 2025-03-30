@@ -8,23 +8,37 @@ exports.main = async (event, context) => {
   const { collection, data } = event
 
   // 验证必要参数
-  if (!collection || !data || !data.userId) {
+  if (!collection || !data) {
     return {
       code: 400,
-      message: '缺少必要参数: collection或userId'
+      message: '缺少必要参数: collection'
     }
   }
 
   try {
-    // 检查是否已存在记录
+    // 检查是否已存在记录 - 兼容两种查询方式
+    let queryCondition = {}
+    
+    // 支持 summary.js 中使用的 _openid 查询
+    if (data._openid) {
+      queryCondition._openid = data._openid
+    } 
+    // 支持 information.js 中使用的 userId 查询
+    else if (data.userId) {
+      queryCondition.userId = data.userId
+    }
+    // 如果都没有，则使用默认的 OPENID
+    else {
+      const wxContext = cloud.getWXContext()
+      queryCondition._openid = wxContext.OPENID
+    }
+    
     const queryRes = await db.collection(collection)
-      .where({
-        userId: data.userId
-      })
+      .where(queryCondition)
       .get()
 
     let result
-    if (queryRes.data.length > 0) {
+    if (queryRes.data && queryRes.data.length > 0) {
       // 更新现有记录
       result = await db.collection(collection)
         .doc(queryRes.data[0]._id)
@@ -34,6 +48,15 @@ exports.main = async (event, context) => {
             updateTime: db.serverDate()
           }
         })
+      
+      return {
+        code: 0,
+        message: '更新成功',
+        data: {
+          ...result,
+          _id: queryRes.data[0]._id
+        }
+      }
     } else {
       // 添加新记录
       const completeData = {
@@ -42,15 +65,22 @@ exports.main = async (event, context) => {
         updateTime: db.serverDate(),
         _status: 'active'
       }
+      
+      // 确保有 _openid 字段
+      if (!completeData._openid) {
+        const wxContext = cloud.getWXContext()
+        completeData._openid = wxContext.OPENID
+      }
+      
       result = await db.collection(collection).add({
         data: completeData
       })
-    }
-
-    return {
-      code: 0,
-      message: '操作成功',
-      data: result
+      
+      return {
+        code: 0,
+        message: '创建成功',
+        data: result
+      }
     }
   } catch (err) {
     console.error('数据库操作失败:', err)
@@ -58,7 +88,7 @@ exports.main = async (event, context) => {
       code: 500,
       message: '服务器内部错误',
       data: {
-        errMsg: err.message
+        errMsg: err.message || '未知错误'
       }
     }
   }

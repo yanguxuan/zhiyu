@@ -48,10 +48,8 @@ Page({
       const allChats = result.data || [];
       
       if (allChats.length === 0) {
-        this.setData({ 
-          loading: false, 
-          error: '没有找到历史对话记录' 
-        });
+        // 没有历史对话，直接跳转回information页面
+        this.navigateToInformation();
         return;
       }
 
@@ -103,44 +101,25 @@ Page({
       const summary = fullResponse.trim();
       
       // 5. 解析总结表格
-      const summaryData = this.parseSummaryTable(summary);
+      const parsedData = this.parseSummaryTable(summary);
       
-      this.setData({ 
-        summaryData,
-        loading: false,
-        progress: 100
-      });
+      // 保存到本地存储
+      this.saveToLocalStorage(summary, parsedData);
       
-      // 保存总结结果到本地存储和数据库
-      wx.setStorageSync('userSummary', {
-        data: summaryData,
-        timestamp: Date.now()
-      });
-
       // 保存到数据库
       try {
-        const saved = await this.saveUserSummary(summary);
-        if (saved) {
-          // 返回上一页并刷新数据
-          const pages = getCurrentPages();
-          const informationPage = pages[pages.length - 2];
-          if (informationPage && typeof informationPage.loadUserSummary === 'function') {
-            informationPage.loadUserSummary();
-          }
-          wx.navigateBack();
-        }
+        await this.saveUserSummary(summary, false);
       } catch (saveErr) {
         console.error('保存总结报告失败:', saveErr);
-        // 即使保存失败，也显示总结结果
       }
+      
+      // 无论成功失败，都直接跳转
+      this.navigateToInformation();
       
     } catch (err) {
       console.error('总结生成失败:', err);
-      this.setData({ 
-        loading: false, 
-        error: err.message || '总结生成失败',
-        progress: 0
-      });
+      // 即使出错也直接跳转
+      this.navigateToInformation();
     }
   },
 
@@ -197,7 +176,29 @@ Page({
     }
   },
 
-  saveUserSummary: async function(summaryContent) {
+  // 新增：保存到本地存储的辅助函数
+  saveToLocalStorage: function(summary, parsedData) {
+    // 保存完整格式
+    wx.setStorageSync('userSummaryReport', {
+      content: summary,
+      parsedContent: parsedData,
+      updateTime: new Date().toLocaleString()
+    });
+    
+    // 保存为userSummary格式
+    wx.setStorageSync('userSummary', {
+      data: parsedData,
+      content: summary,
+      timestamp: Date.now()
+    });
+    
+    // 保存行为分析数组
+    wx.setStorageSync('summaryBehaviorData', parsedData.behaviorAnalysis || []);
+    
+    console.log('本地存储已保存');
+  },
+
+  saveUserSummary: async function(summaryContent, shouldNavigateBack = true) {
     try {
       const userInfo = this.data.userInfo;
       if (!userInfo || !userInfo.openid) {
@@ -213,15 +214,15 @@ Page({
         content: summaryContent,
         parsedContent: parsedContent,
         updateTime: new Date().toLocaleString(),
-        userId: userInfo.openid,  // 保持字段名一致
-        _openid: userInfo.openid  // 同时保留 _openid 字段以便权限控制
+        userId: userInfo.openid,
+        _openid: userInfo.openid
       };
       
       console.log('准备保存的数据:', summaryData);
       
       // 先查询是否已有记录
       const result = await db.collection('user_imf').where({
-        _openid: userInfo.openid  // 使用 _openid 查询，这是云开发的的标准字段
+        _openid: userInfo.openid
       }).get();
       
       console.log('查询结果:', result);
@@ -233,7 +234,7 @@ Page({
             content: summaryData.content,
             parsedContent: summaryData.parsedContent,
             updateTime: summaryData.updateTime,
-            userId: summaryData.userId  // 确保更新时也包含 userId
+            userId: summaryData.userId
           }
         });
         console.log('更新记录成功');
@@ -245,82 +246,53 @@ Page({
         console.log('创建新记录成功:', addResult);
       }
       
-      // 同时更新本地存储，确保信息页面可以直接从本地获取
-      wx.setStorageSync('userSummaryReport', {
-        content: summaryContent,
-        parsedContent: parsedContent,
-        updateTime: new Date().toLocaleString()
-      });
-      
+      // 显示成功提示
       wx.showToast({
         title: '报告保存成功',
-        icon: 'success'
+        icon: 'success',
+        duration: 1000
       });
       
+      // 移除自动跳转逻辑，由generateSummary统一处理
       return true;
     } catch (err) {
       console.error('保存总结报告失败:', err);
       wx.showToast({
         title: '保存失败',
-        icon: 'none'
+        icon: 'none',
+        duration: 1000
       });
       return false;
     }
   },
   
-  // 重试生成总结
-  retryGenerate: function() {
-    this.setData({
-      loading: true,
-      progress: 0,
-      error: null
-    });
-    this.generateSummary();
-  },
-  
-  // 返回上一页
-  goBack: function() {
-    wx.navigateBack();
-  },
-  
-  // 在生成完成后的处理函数 - 移到Page对象内部
-  onGenerateComplete: function(summaryData) {
-    // 保存数据到数据库
-    this.saveSummaryToDatabase(summaryData);
-    
-    // 保存到本地存储
-    wx.setStorageSync('userSummaryReport', {
-      content: summaryData,
-      updateTime: new Date().toLocaleString()
-    });
-    
-    // 延迟一下再跳转，让用户看到100%的进度
-    setTimeout(() => {
-      // 返回上一页并刷新
-      const pages = getCurrentPages();
-      const prevPage = pages[pages.length - 2]; // 获取上一个页面
-      
-      if (prevPage && prevPage.route === 'pages/information/information') {
-        // 直接设置上一页的数据，避免重新加载
-        prevPage.setData({
-          summaryData: summaryData,
-          hasSummary: true
-        });
-        
-        wx.navigateBack({
-          success: function() {
-            // 返回成功后，确保上一页刷新
-            if (prevPage.loadUserSummary) {
-              prevPage.loadUserSummary();
-            }
-          }
-        });
-      } else {
-        // 如果不是从information页面进入的，则重定向
-        wx.redirectTo({
-          url: '/pages/information/information'
-        });
+  // 新增：统一处理跳转到information页面的逻辑
+  navigateToInformation: function() {
+    // 先尝试刷新上一页数据
+    const pages = getCurrentPages();
+    if (pages.length > 1) {
+      const prevPage = pages[pages.length - 2];
+      if (prevPage && typeof prevPage.loadUserSummary === 'function') {
+        try {
+          // 调用上一页的刷新方法
+          prevPage.loadUserSummary();
+        } catch (e) {
+          console.error('刷新上一页数据失败:', e);
+        }
       }
-    }, 1000);
-  }
+      
+      // 返回上一页
+      wx.navigateBack();
+    } else {
+      // 如果没有上一页，则重定向到information页面
+      wx.redirectTo({
+        url: '/pages/information/information'
+      });
+    }
+  },
+  
+  // 保留goBack函数，但内部调用navigateToInformation
+  goBack: function() {
+    this.navigateToInformation();
+  },
 });

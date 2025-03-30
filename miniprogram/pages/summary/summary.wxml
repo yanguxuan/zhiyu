@@ -13,37 +13,4 @@
     </view>
     <text class="loading-text">正在分析您的历史对话...</text>
   </view>
-  
-  <!-- 错误状态 -->
-  <view class="error-container" wx:elif="{{error}}">
-    <icon type="warn" size="64" color="#e64340"></icon>
-    <text class="error-text">{{error}}</text>
-    <button class="retry-btn" bindtap="retryGenerate">重试</button>
-  </view>
-  
-  <!-- 总结结果 -->
-  <view class="summary-container" wx:elif="{{summaryData.length > 0}}">
-    <view class="table-header">
-      <view class="th explicit">显性信息</view>
-      <view class="th implicit">隐性推导</view>
-    </view>
-    
-    <scroll-view scroll-y class="table-body">
-      <view class="table-row" wx:for="{{summaryData}}" wx:key="index">
-        <view class="td explicit">{{item.explicit}}</view>
-        <view class="td implicit">{{item.implicit}}</view>
-      </view>
-    </scroll-view>
-    
-    <view class="summary-footer">
-      <button class="back-btn" bindtap="goBack">返回</button>
-    </view>
-  </view>
-  
-  <!-- 空状态 -->
-  <view class="empty-container" wx:else>
-    <icon type="info" size="64" color="#999"></icon>
-    <text class="empty-text">暂无总结数据</text>
-    <button class="retry-btn" bindtap="retryGenerate">重新生成</button>
-  </view>
 </view>
