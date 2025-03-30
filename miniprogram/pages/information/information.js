@@ -56,8 +56,9 @@ Page({
       this.loadUserSummary();
     },
     
-    // 从本地存储加载家庭信息
+    // 从本地存储和云端加载家庭信息
     loadFamilyInfoFromStorage() {
+      // 先从本地加载
       const savedFamilyInfo = wx.getStorageSync('familyInfo');
       const savedDetailedInfo = wx.getStorageSync('detailedFamilyInfo');
       
@@ -67,6 +68,35 @@ Page({
       
       if (savedDetailedInfo) {
         this.setData({ detailedInfo: savedDetailedInfo });
+      }
+      
+      // 再尝试从云端加载最新数据
+      const userInfo = wx.getStorageSync('userInfo');
+      if (userInfo && userInfo.openid) {
+        wx.cloud.database().collection('user_info')
+          .where({
+            userId: userInfo.openid
+          })
+          .get()
+          .then(res => {
+            if (res.data && res.data.length > 0) {
+              const cloudData = res.data[0];
+              
+              // 如果云端有数据，更新本地
+              if (cloudData.familyInfo) {
+                this.setData({ familyInfo: cloudData.familyInfo });
+                wx.setStorageSync('familyInfo', cloudData.familyInfo);
+              }
+              
+              if (cloudData.detailedInfo) {
+                this.setData({ detailedInfo: cloudData.detailedInfo });
+                wx.setStorageSync('detailedFamilyInfo', cloudData.detailedInfo);
+              }
+            }
+          })
+          .catch(err => {
+            console.error('从云端加载家庭信息失败:', err);
+          });
       }
     },
     
@@ -212,13 +242,53 @@ Page({
       wx.setStorageSync('familyInfo', this.data.familyInfo);
       wx.setStorageSync('detailedFamilyInfo', this.data.detailedInfo);
       
-      setTimeout(() => {
-        wx.hideLoading();
-        wx.showToast({
-          title: '保存成功',
-          icon: 'success'
+      // 添加保存到云数据库的功能
+      const userInfo = wx.getStorageSync('userInfo');
+      if (userInfo && userInfo.openid) {
+        // 准备要保存的数据 - 确保所有字段都有值
+        const saveData = {
+          userId: userInfo.openid,
+          familyInfo: this.data.familyInfo || {},
+          detailedInfo: this.data.detailedInfo || {},
+          updateTime: new Date()
+        };
+        
+        // 调用云函数保存数据 - 添加更详细的错误处理
+        wx.cloud.callFunction({
+          name: 'saveUserInfo',
+          data: {
+            collection: 'user_info',
+            data: JSON.parse(JSON.stringify(saveData)) // 确保数据可序列化
+          }
+        }).then(() => {
+          wx.hideLoading();
+          wx.showToast({
+            title: '保存成功',
+            icon: 'success'
+          });
+        }).catch(err => {
+          console.error('保存到云数据库失败:', err);
+          // 更详细的错误信息
+          let errMsg = '云端保存失败，已保存到本地';
+          if (err.errMsg.includes('missing ) after argument list')) {
+            errMsg = '服务器配置错误，请联系管理员';
+          }
+          wx.hideLoading();
+          wx.showToast({
+            title: errMsg,
+            icon: 'none'
+          });
         });
-      }, 500);
+      } else {
+        // 如果没有用户信息，只保存到本地
+        setTimeout(() => {
+          wx.hideLoading();
+          wx.showToast({
+            title: '已保存到本地',
+            icon: 'success'
+          });
+        }, 500);
+      }
     },
     
     // 加载用户总结报告

@@ -1,7 +1,4 @@
-// cloudfunctions/saveUserInfo/index.js
 const cloud = require('wx-server-sdk')
-
-// 初始化云环境（自动继承当前环境）
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV
 })
@@ -10,36 +7,58 @@ exports.main = async (event, context) => {
   const db = cloud.database()
   const { collection, data } = event
 
+  // 验证必要参数
+  if (!collection || !data || !data.userId) {
+    return {
+      code: 400,
+      message: '缺少必要参数: collection或userId'
+    }
+  }
+
   try {
-    // 添加系统字段
-    const completeData = {
-      ...data,
-      createTime: db.serverDate(),    // 服务端时间戳
-      updateTime: db.serverDate(),
-      _status: 'active'               // 软删除标记
+    // 检查是否已存在记录
+    const queryRes = await db.collection(collection)
+      .where({
+        userId: data.userId
+      })
+      .get()
+
+    let result
+    if (queryRes.data.length > 0) {
+      // 更新现有记录
+      result = await db.collection(collection)
+        .doc(queryRes.data[0]._id)
+        .update({
+          data: {
+            ...data,
+            updateTime: db.serverDate()
+          }
+        })
+    } else {
+      // 添加新记录
+      const completeData = {
+        ...data,
+        createTime: db.serverDate(),
+        updateTime: db.serverDate(),
+        _status: 'active'
+      }
+      result = await db.collection(collection).add({
+        data: completeData
+      })
     }
 
-    // 执行数据库插入
-    const res = await db.collection(collection).add({
-      data: completeData
-    })
-
-    // 返回标准格式
     return {
       code: 0,
-      message: '保存成功',
-      data: {
-        _id: res._id,
-        createTime: completeData.createTime
-      }
+      message: '操作成功',
+      data: result
     }
   } catch (err) {
-    console.error('数据库写入失败:', err)
+    console.error('数据库操作失败:', err)
     return {
-      code: 5001,
-      message: '数据保存失败，请检查网络后重试',
+      code: 500,
+      message: '服务器内部错误',
       data: {
-        errMsg: err.errMsg || '未知错误'
+        errMsg: err.message
       }
     }
   }

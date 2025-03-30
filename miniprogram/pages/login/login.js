@@ -136,6 +136,23 @@ Page({
         console.error('更新用户信息失败:', err)
       })
 
+      // 保存用户基本信息到user_info集合
+      await wx.cloud.callFunction({
+        name: 'saveUserInfo',
+        data: {
+          collection: 'user_info',
+          data: {
+            userId: result.openid,
+            nickName: this.data.nickName.trim(),
+            avatarUrl: this.data.avatarUrl,
+            registerTime: new Date(),
+            lastLoginTime: new Date()
+          }
+        }
+      }).catch(err => {
+        console.error('保存用户信息到user_info失败:', err)
+      })
+
       // 保存用户信息到本地
       const userInfo = {
         avatarUrl: this.data.avatarUrl,
@@ -228,4 +245,4 @@ Page({
       }
     });
   }
-}) 
+})
