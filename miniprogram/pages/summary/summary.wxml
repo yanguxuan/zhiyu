@@ -13,4 +13,121 @@
     </view>
     <text class="loading-text">正在分析您的历史对话...</text>
   </view>
+
+  <!-- 分析结果展示 -->
+  <view class="analysis-container" wx:if="{{!loading}}">
+    <!-- 1. 行为分析部分 -->
+    <view class="section">
+      <view class="section-title">用户行为分析</view>
+      <view class="behavior-table">
+        <view class="table-header">
+          <text class="cell">显性行为</text>
+          <text class="cell">隐性行为</text>
+        </view>
+        <view class="table-row" wx:for="{{summaryData.behaviorAnalysis}}" wx:key="index">
+          <text class="cell">{{item.explicit}}</text>
+          <text class="cell">{{item.implicit}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 2. 情感分析部分 -->
+    <view class="section">
+      <view class="section-title">情感倾向分析</view>
+      <view class="subsection">
+        <view class="subsection-title">主要情绪状态</view>
+        <view class="bullet-list">
+          <view class="bullet-item" wx:for="{{summaryData.emotionalAnalysis.emotionalState}}" wx:key="index">
+            {{item}}
+          </view>
+        </view>
+      </view>
+      <view class="subsection">
+        <view class="subsection-title">情绪波动规律</view>
+        <view class="bullet-list">
+          <view class="bullet-item" wx:for="{{summaryData.emotionalAnalysis.emotionalPattern}}" wx:key="index">
+            {{item}}
+          </view>
+        </view>
+      </view>
+      <view class="subsection">
+        <view class="subsection-title">压力源识别</view>
+        <view class="bullet-list">
+          <view class="bullet-item" wx:for="{{summaryData.emotionalAnalysis.stressors}}" wx:key="index">
+            {{item}}
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 3. 兴趣分析部分 -->
+    <view class="section">
+      <view class="section-title">兴趣点分析</view>
+      <view class="subsection">
+        <view class="subsection-title">主要关注领域</view>
+        <view class="bullet-list">
+          <view class="bullet-item" wx:for="{{summaryData.interestAnalysis.mainInterests}}" wx:key="index">
+            {{item}}
+          </view>
+        </view>
+      </view>
+      <view class="subsection">
+        <view class="subsection-title">重复提及话题</view>
+        <view class="bullet-list">
+          <view class="bullet-item" wx:for="{{summaryData.interestAnalysis.repeatedTopics}}" wx:key="index">
+            {{item}}
+          </view>
+        </view>
+      </view>
+      <view class="subsection">
+        <view class="subsection-title">深入讨论内容</view>
+        <view class="bullet-list">
+          <view class="bullet-item" wx:for="{{summaryData.interestAnalysis.deepDiscussions}}" wx:key="index">
+            {{item}}
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 4. 交互模式分析 -->
+    <view class="section">
+      <view class="section-title">交互模式分析</view>
+      <view class="subsection">
+        <view class="subsection-title">对话频率</view>
+        <view class="bullet-list">
+          <view class="bullet-item" wx:for="{{summaryData.interactionAnalysis.frequency}}" wx:key="index">
+            {{item}}
+          </view>
+        </view>
+      </view>
+      <view class="subsection">
+        <view class="subsection-title">回应积极度</view>
+        <view class="bullet-list">
+          <view class="bullet-item" wx:for="{{summaryData.interactionAnalysis.responsiveness}}" wx:key="index">
+            {{item}}
+          </view>
+        </view>
+      </view>
+      <view class="subsection">
+        <view class="subsection-title">问题类型偏好</view>
+        <view class="bullet-list">
+          <view class="bullet-item" wx:for="{{summaryData.interactionAnalysis.questionPreference}}" wx:key="index">
+            {{item}}
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 5. 核心问题诊断 -->
+    <view class="section">
+      <view class="section-title">核心问题诊断</view>
+      <view class="content-text">{{summaryData.diagnosis}}</view>
+    </view>
+
+    <!-- 6. 干预策略 -->
+    <view class="section">
+      <view class="section-title">干预策略设计</view>
+      <view class="content-text">{{summaryData.strategy}}</view>
+    </view>
+  </view>
 </view>

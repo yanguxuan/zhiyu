@@ -19,6 +19,7 @@ Page({
     currentStage: AGENT_CONFIG.COLLECT,
     stageProgress: 0, // 对话轮次计数
     isFirstUserMessage: true, // 添加标记第一次用户消息的字段
+    userAnalysis: null, // 添加用户分析数据字段
   },
 
   onLoad(options) {
@@ -41,6 +42,9 @@ Page({
 
     this.downloadBackgroundImage();
     this.downloadLogoImage();
+    
+    // 加载用户分析数据
+    this.loadUserAnalysis();
 
     if (this.data.isHistory) {
       this.loadHistoryChat(this.data.chatId);
@@ -308,11 +312,24 @@ Page({
   async getBotResponse(content, history = [], specificBotId) {
     try {
       const botId = specificBotId || this.data.currentStage.id;
+      
+      // 准备用户画像数据
+      let userProfile = '';
+      if (this.data.userAnalysis) {
+        const analysis = this.data.userAnalysis;
+        userProfile = this.generateUserProfile(analysis);
+      }
+
+      // 在对话历史的开始添加用户画像信息
+      const enhancedHistory = userProfile ? 
+        [{ role: 'system', content: userProfile }, ...history] : 
+        history;
+
       const res = await wx.cloud.extend.AI.bot.sendMessage({
         data: {
           botId,
           msg: this.cleanMessage(content),
-          history: history
+          history: enhancedHistory
         }
       });
 
@@ -332,10 +349,162 @@ Page({
         }
       }
       
+      // 更新用户画像
+      await this.updateUserProfile(content, fullResponse);
+      
       return fullResponse.trim();
     } catch (err) {
       console.error('智能体调用失败:', err);
       return '服务暂时不可用，请稍后再试';
+    }
+  },
+
+  // 生成用户画像信息
+  generateUserProfile: function(analysis) {
+    try {
+      const emotional = this.extractEmotionalTendency(analysis);
+      const interests = this.extractMainInterests(analysis);
+      const interaction = this.extractInteractionStyle(analysis);
+      const demands = this.extractCoreDemands(analysis);
+      const strategies = this.extractStrategies(analysis);
+
+      return `
+用户画像信息：
+1. 情感倾向：${emotional}
+2. 主要兴趣：${interests}
+3. 交互特点：${interaction}
+4. 核心诉求：${demands}
+5. 建议策略：${strategies}
+
+对话指导：
+1. 根据用户的情感状态调整回应语气
+2. 优先关注用户的主要兴趣领域
+3. 适应用户的交互习惯
+4. 针对核心诉求提供解决方案
+5. 参考已有的建议策略
+6. 保持对话的连贯性和个性化
+7. 适时引导用户深入讨论重要话题
+8. 注意观察用户情绪变化并调整回应方式`;
+    } catch (err) {
+      console.error('生成用户画像失败:', err);
+      return '';
+    }
+  },
+
+  // 更新用户画像
+  updateUserProfile: function(userMessage, botResponse) {
+    try {
+      // 获取当前用户画像
+      const currentProfile = this.data.userAnalysis;
+      if (!currentProfile) return;
+
+      // 准备更新数据
+      const updateData = {
+        lastInteraction: new Date(),
+        messageCount: (currentProfile.messageCount || 0) + 1,
+        lastMessage: userMessage,
+        lastResponse: botResponse
+      };
+
+      // 更新本地数据
+      const updatedProfile = {
+        ...currentProfile,
+        ...updateData
+      };
+      this.setData({ userAnalysis: updatedProfile });
+
+      // 保存到本地存储
+      wx.setStorageSync('userSummaryReport', updatedProfile);
+
+      // 每10条消息更新一次数据库
+      if (updateData.messageCount % 10 === 0) {
+        this.saveUserProfileToDB(updatedProfile);
+      }
+    } catch (err) {
+      console.error('更新用户画像失败:', err);
+    }
+  },
+
+  // 保存用户画像到数据库
+  saveUserProfileToDB: function(profile) {
+    const db = wx.cloud.database();
+    db.collection('user_imf').where({
+      userId: this.data.userInfo.openid
+    }).get().then(result => {
+      if (result.data && result.data.length > 0) {
+        // 更新现有记录
+        return db.collection('user_imf').doc(result.data[0]._id).update({
+          data: {
+            ...profile,
+            updateTime: new Date()
+          }
+        });
+      } else {
+        // 创建新记录
+        return db.collection('user_imf').add({
+          data: {
+            ...profile,
+            userId: this.data.userInfo.openid,
+            createTime: new Date(),
+            updateTime: new Date()
+          }
+        });
+      }
+    }).catch(err => {
+      console.error('保存用户画像到数据库失败:', err);
+    });
+  },
+
+  // 辅助函数：提取情感倾向
+  extractEmotionalTendency(analysis) {
+    try {
+      const emotional = analysis.parsedContent.emotionalAnalysis;
+      return `情绪状态: ${emotional.emotionalState.join(', ')}, 
+              波动规律: ${emotional.emotionalPattern.join(', ')}, 
+              压力源: ${emotional.stressors.join(', ')}`;
+    } catch (err) {
+      return '暂无情感倾向数据';
+    }
+  },
+
+  // 辅助函数：提取主要兴趣
+  extractMainInterests(analysis) {
+    try {
+      const interests = analysis.parsedContent.interestAnalysis;
+      return `关注领域: ${interests.mainInterests.join(', ')}, 
+              重点话题: ${interests.repeatedTopics.join(', ')}`;
+    } catch (err) {
+      return '暂无兴趣数据';
+    }
+  },
+
+  // 辅助函数：提取交互特点
+  extractInteractionStyle(analysis) {
+    try {
+      const interaction = analysis.parsedContent.interactionAnalysis;
+      return `对话频率: ${interaction.frequency.join(', ')}, 
+              回应积极度: ${interaction.responsiveness.join(', ')}, 
+              问题偏好: ${interaction.questionPreference.join(', ')}`;
+    } catch (err) {
+      return '暂无交互特点数据';
+    }
+  },
+
+  // 辅助函数：提取核心诉求
+  extractCoreDemands(analysis) {
+    try {
+      return analysis.parsedContent.diagnosis || '暂无核心诉求数据';
+    } catch (err) {
+      return '暂无核心诉求数据';
+    }
+  },
+
+  // 辅助函数：提取建议策略
+  extractStrategies(analysis) {
+    try {
+      return analysis.parsedContent.strategy || '暂无建议策略数据';
+    } catch (err) {
+      return '暂无建议策略数据';
     }
   },
 
@@ -386,5 +555,32 @@ Page({
     } catch (error) {
       console.error('删除聊天记录失败:', error);
     }
-  }
+  },
+
+  // 加载用户分析数据
+  async loadUserAnalysis() {
+    try {
+      // 先从本地存储获取
+      const localAnalysis = wx.getStorageSync('userSummaryReport');
+      if (localAnalysis && localAnalysis.content) {
+        this.setData({ userAnalysis: localAnalysis });
+        return;
+      }
+
+      // 如果本地没有，从数据库获取
+      const db = wx.cloud.database();
+      const result = await db.collection('user_imf').where({
+        userId: this.data.userInfo.openid
+      }).get();
+
+      if (result.data && result.data.length > 0) {
+        const analysis = result.data[0];
+        this.setData({ userAnalysis: analysis });
+        // 保存到本地存储
+        wx.setStorageSync('userSummaryReport', analysis);
+      }
+    } catch (err) {
+      console.error('加载用户分析数据失败:', err);
+    }
+  },
 });

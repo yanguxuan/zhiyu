@@ -77,7 +77,43 @@ Page({
       const res = await wx.cloud.extend.AI.bot.sendMessage({
         data: {
           botId: summaryBotId,
-          msg: "生成用户综合总结报告",
+          msg: `请对用户的历史对话进行全面分析，生成详细的用户画像报告。请严格按照以下格式和字数要求生成报告：
+
+1. ▍用户行为分析表（每项50-100字）
+   - 显性行为：用户直接表达的需求和行为（3-5条）
+   - 隐性行为：通过对话推断出的潜在需求和行为模式（3-5条）
+
+2. ▍情感倾向分析（每项30-50字）
+   - 主要情绪状态（2-3点）
+   - 情绪波动规律（2-3点）
+   - 压力源识别（2-3点）
+
+3. ▍兴趣点分析（每项30-50字）
+   - 主要关注领域（2-3点）
+   - 重复提及的话题（2-3点）
+   - 深入讨论的内容（2-3点）
+
+4. ▍交互模式分析（每项30-50字）
+   - 对话频率（2-3点）
+   - 回应积极度（2-3点）
+   - 问题类型偏好（2-3点）
+
+5. ▍核心问题诊断（200-300字）
+   - 主要困扰（1-2点）
+   - 问题根源（1-2点）
+   - 发展趋势（1-2点）
+
+6. ▍干预策略设计（300-400字）
+   - 短期建议（2-3点）
+   - 中长期规划（2-3点）
+   - 具体执行步骤（3-5点）
+
+请确保：
+1. 每个部分都严格按照上述格式和字数要求
+2. 使用简洁、专业的语言
+3. 保持客观、中立的分析态度
+4. 建议要具体、可执行
+5. 避免重复和冗余内容`,
           history: allMessages.slice(-50) // 限制历史记录数量，避免超出限制
         }
       });
@@ -127,16 +163,30 @@ Page({
     try {
       if (!summary || typeof summary !== 'string') {
         console.error('无效的总结内容:', summary);
-        return {
-          behaviorAnalysis: [],
-          diagnosis: '',
-          strategy: ''
-        };
+        return this.getEmptySummaryData();
+      }
+      
+      // 验证报告格式
+      if (!this.validateSummaryFormat(summary)) {
+        console.error('报告格式不符合要求');
+        return this.getEmptySummaryData();
       }
       
       // 提取用户行为分析表
-      const behaviorMatch = summary.match(/▍用户行为分析表([\s\S]*?)▍核心问题诊断/);
+      const behaviorMatch = summary.match(/▍用户行为分析表([\s\S]*?)▍情感倾向分析/);
       const behaviorTable = behaviorMatch ? behaviorMatch[1] : '';
+      
+      // 提取情感倾向分析
+      const emotionMatch = summary.match(/▍情感倾向分析([\s\S]*?)▍兴趣点分析/);
+      const emotionText = emotionMatch ? emotionMatch[1] : '';
+      
+      // 提取兴趣点分析
+      const interestMatch = summary.match(/▍兴趣点分析([\s\S]*?)▍交互模式分析/);
+      const interestText = interestMatch ? interestMatch[1] : '';
+      
+      // 提取交互模式分析
+      const interactionMatch = summary.match(/▍交互模式分析([\s\S]*?)▍核心问题诊断/);
+      const interactionText = interactionMatch ? interactionMatch[1] : '';
       
       // 提取核心问题诊断
       const diagnosisMatch = summary.match(/▍核心问题诊断([\s\S]*?)▍干预策略设计/);
@@ -146,34 +196,162 @@ Page({
       const strategyMatch = summary.match(/▍干预策略设计([\s\S]*?)(?:\[KNOWLEDGE|$)/);
       const strategy = strategyMatch ? strategyMatch[1] : '';
 
-      // 解析表格数据
-      const tableData = behaviorTable.split('\n')
-        .filter(line => line.includes('|'))
-        .map(line => {
-          const cells = line.split('|').map(cell => cell.trim()).filter(Boolean);
-          if (cells.length >= 2) {
-            return {
-              explicit: cells[0].replace(/[""]/g, ''),
-              implicit: cells[1].replace(/[\[\]]/g, '')
-            };
-          }
-          return null;
-        })
-        .filter(item => item !== null);
+      // 解析行为分析表格数据
+      const tableData = this.parseBehaviorTable(behaviorTable);
 
-      return {
-        behaviorAnalysis: tableData,
-        diagnosis: diagnosis.trim(),
-        strategy: strategy.trim()
+      // 解析情感分析数据
+      const emotionalAnalysis = {
+        emotionalState: this.extractBulletPoints(emotionText, '主要情绪状态'),
+        emotionalPattern: this.extractBulletPoints(emotionText, '情绪波动规律'),
+        stressors: this.extractBulletPoints(emotionText, '压力源识别')
       };
+
+      // 解析兴趣分析数据
+      const interestAnalysis = {
+        mainInterests: this.extractBulletPoints(interestText, '主要关注领域'),
+        repeatedTopics: this.extractBulletPoints(interestText, '重复提及的话题'),
+        deepDiscussions: this.extractBulletPoints(interestText, '深入讨论的内容')
+      };
+
+      // 解析交互模式数据
+      const interactionAnalysis = {
+        frequency: this.extractBulletPoints(interactionText, '对话频率'),
+        responsiveness: this.extractBulletPoints(interactionText, '回应积极度'),
+        questionPreference: this.extractBulletPoints(interactionText, '问题类型偏好')
+      };
+
+      // 验证各部分数据
+      const validatedData = {
+        behaviorAnalysis: this.validateBehaviorAnalysis(tableData),
+        emotionalAnalysis: this.validateEmotionalAnalysis(emotionalAnalysis),
+        interestAnalysis: this.validateInterestAnalysis(interestAnalysis),
+        interactionAnalysis: this.validateInteractionAnalysis(interactionAnalysis),
+        diagnosis: this.validateDiagnosis(diagnosis),
+        strategy: this.validateStrategy(strategy)
+      };
+
+      return validatedData;
     } catch (err) {
       console.error('解析总结内容失败:', err);
-      return {
-        behaviorAnalysis: [],
-        diagnosis: '',
-        strategy: ''
-      };
+      return this.getEmptySummaryData();
     }
+  },
+
+  // 获取空的总结数据结构
+  getEmptySummaryData: function() {
+    return {
+      behaviorAnalysis: [],
+      emotionalAnalysis: {
+        emotionalState: [],
+        emotionalPattern: [],
+        stressors: []
+      },
+      interestAnalysis: {
+        mainInterests: [],
+        repeatedTopics: [],
+        deepDiscussions: []
+      },
+      interactionAnalysis: {
+        frequency: [],
+        responsiveness: [],
+        questionPreference: []
+      },
+      diagnosis: '',
+      strategy: ''
+    };
+  },
+
+  // 验证报告格式
+  validateSummaryFormat: function(summary) {
+    const requiredSections = [
+      '▍用户行为分析表',
+      '▍情感倾向分析',
+      '▍兴趣点分析',
+      '▍交互模式分析',
+      '▍核心问题诊断',
+      '▍干预策略设计'
+    ];
+
+    return requiredSections.every(section => summary.includes(section));
+  },
+
+  // 解析行为分析表格
+  parseBehaviorTable: function(behaviorTable) {
+    return behaviorTable.split('\n')
+      .filter(line => line.includes('|'))
+      .map(line => {
+        const cells = line.split('|').map(cell => cell.trim()).filter(Boolean);
+        if (cells.length >= 2) {
+          return {
+            explicit: cells[0].replace(/[""]/g, ''),
+            implicit: cells[1].replace(/[\[\]]/g, '')
+          };
+        }
+        return null;
+      })
+      .filter(item => item !== null);
+  },
+
+  // 验证行为分析数据
+  validateBehaviorAnalysis: function(data) {
+    if (!Array.isArray(data)) return [];
+    return data.slice(0, 5); // 限制最多5条记录
+  },
+
+  // 验证情感分析数据
+  validateEmotionalAnalysis: function(data) {
+    const validateArray = (arr) => Array.isArray(arr) ? arr.slice(0, 3) : [];
+    return {
+      emotionalState: validateArray(data.emotionalState),
+      emotionalPattern: validateArray(data.emotionalPattern),
+      stressors: validateArray(data.stressors)
+    };
+  },
+
+  // 验证兴趣分析数据
+  validateInterestAnalysis: function(data) {
+    const validateArray = (arr) => Array.isArray(arr) ? arr.slice(0, 3) : [];
+    return {
+      mainInterests: validateArray(data.mainInterests),
+      repeatedTopics: validateArray(data.repeatedTopics),
+      deepDiscussions: validateArray(data.deepDiscussions)
+    };
+  },
+
+  // 验证交互模式数据
+  validateInteractionAnalysis: function(data) {
+    const validateArray = (arr) => Array.isArray(arr) ? arr.slice(0, 3) : [];
+    return {
+      frequency: validateArray(data.frequency),
+      responsiveness: validateArray(data.responsiveness),
+      questionPreference: validateArray(data.questionPreference)
+    };
+  },
+
+  // 验证诊断内容
+  validateDiagnosis: function(diagnosis) {
+    if (!diagnosis) return '';
+    // 限制诊断内容在200-300字之间
+    return diagnosis.length > 300 ? diagnosis.substring(0, 300) + '...' : diagnosis;
+  },
+
+  // 验证策略内容
+  validateStrategy: function(strategy) {
+    if (!strategy) return '';
+    // 限制策略内容在300-400字之间
+    return strategy.length > 400 ? strategy.substring(0, 400) + '...' : strategy;
+  },
+
+  // 辅助函数：提取带有特定标题的要点
+  extractBulletPoints: function(text, title) {
+    const pattern = new RegExp(`${title}[：:](.*?)(?=\\n\\s*-|$)`, 's');
+    const match = text.match(pattern);
+    if (!match) return [];
+    
+    return match[1].split('\n')
+      .map(line => line.trim())
+      .filter(line => line.startsWith('-'))
+      .map(line => line.substring(1).trim());
   },
 
   // 新增：保存到本地存储的辅助函数
@@ -214,15 +392,14 @@ Page({
         content: summaryContent,
         parsedContent: parsedContent,
         updateTime: new Date().toLocaleString(),
-        userId: userInfo.openid,
-        _openid: userInfo.openid
+        userId: userInfo.openid
       };
       
       console.log('准备保存的数据:', summaryData);
       
       // 先查询是否已有记录
       const result = await db.collection('user_imf').where({
-        _openid: userInfo.openid
+        userId: userInfo.openid
       }).get();
       
       console.log('查询结果:', result);
