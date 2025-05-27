@@ -175,9 +175,6 @@
       <button class="action-btn save-btn" bindtap="saveFamilyInfo">
         <text class="btn-text">保存信息</text>
       </button>
-      <button class="action-btn family-btn" bindtap="generateFamilyInfo" loading="{{loadingFamilyInfo}}">
-        <text class="btn-text">分析家庭</text>
-      </button>
       <button class="action-btn summary-btn" bindtap="navigateToSummary">
         <text class="btn-text">生成报告</text>
       </button>
