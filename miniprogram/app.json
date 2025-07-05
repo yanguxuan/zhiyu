@@ -8,7 +8,8 @@
     "pages/hottopic_1/hottopic_1",
     "pages/hottopic_2/hottopic_2",
     "pages/hottopic_3/hottopic_3",
-    "pages/summary/summary"
+    "pages/summary/summary",
+    "pages/sound"
   ],
   "window": {
     "backgroundTextStyle": "light",

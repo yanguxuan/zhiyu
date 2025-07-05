@@ -26,6 +26,14 @@
 
   <!-- 输入区域保持原样 -->
   <view class="input-area">
+    <!-- 语音输入按钮 -->
+    <button class="voice-btn" 
+            bindtouchstart="startVoiceInput" 
+            bindtouchend="stopVoiceInput"
+            bindtouchcancel="cancelVoiceInput">
+      <image class="voice-icon" src="{{voiceIconPath}}" mode="aspectFit"></image>
+    </button>
+    
     <textarea class="message-input" 
               value="{{inputValue}}"
               bindinput="onInput"

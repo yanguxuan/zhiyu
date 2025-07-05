@@ -13,6 +13,7 @@ Page({
     userInfo: null,
     backgroundImagePath: '',
     logoPath: '',
+    voiceIconPath: '', // 语音图标路径
     chatId: null,
     isHistory: false,
     isDisabled: true,
@@ -20,6 +21,8 @@ Page({
     stageProgress: 0, // 对话轮次计数
     isFirstUserMessage: true, // 添加标记第一次用户消息的字段
     userAnalysis: null, // 添加用户分析数据字段
+    isRecording: false, // 是否正在录音
+    recorderManager: null, // 录音管理器
   },
 
   onLoad(options) {
@@ -42,6 +45,10 @@ Page({
 
     this.downloadBackgroundImage();
     this.downloadLogoImage();
+    this.downloadVoiceIcon();
+    
+    // 初始化录音管理器
+    this.initRecorderManager();
     
     // 加载用户分析数据
     this.loadUserAnalysis();
@@ -581,6 +588,157 @@ Page({
       }
     } catch (err) {
       console.error('加载用户分析数据失败:', err);
+    }
+  },
+
+  // 下载语音图标
+  downloadVoiceIcon() {
+    wx.cloud.downloadFile({
+      fileID: 'cloud://zhiyu-1gumpjete2a88c59.7a68-zhiyu-1gumpjete2a88c59-1339882768/images/microphone.png',
+      success: res => {
+        this.setData({ voiceIconPath: res.tempFilePath });
+      },
+      fail: err => {
+        console.error('语音图标下载失败:', err);
+        // 设置默认图标或空值
+        this.setData({ voiceIconPath: '' });
+      }
+    });
+  },
+
+  // 初始化录音管理器
+  initRecorderManager() {
+    const recorderManager = wx.getRecorderManager();
+    
+    // 监听录音开始事件
+    recorderManager.onStart(() => {
+      console.log('录音开始');
+      this.setData({ isRecording: true });
+      wx.showToast({ title: '开始录音', icon: 'none' });
+    });
+
+    // 监听录音结束事件
+    recorderManager.onStop((res) => {
+      console.log('录音结束', res);
+      this.setData({ isRecording: false });
+      
+      if (res.duration < 1000) {
+        wx.showToast({ title: '录音时间太短', icon: 'none' });
+        return;
+      }
+
+      // 上传录音文件到云存储
+      this.uploadVoiceFile(res.tempFilePath);
+    });
+
+    // 监听录音错误事件
+    recorderManager.onError((err) => {
+      console.error('录音错误:', err);
+      this.setData({ isRecording: false });
+      wx.showToast({ title: '录音失败', icon: 'none' });
+    });
+
+    this.setData({ recorderManager });
+  },
+
+  // 开始语音输入
+  startVoiceInput() {
+    if (this.data.isRecording) return;
+    
+    // 检查录音权限
+    wx.getSetting({
+      success: (res) => {
+        if (!res.authSetting['scope.record']) {
+          wx.authorize({
+            scope: 'scope.record',
+            success: () => {
+              this.startRecording();
+            },
+            fail: () => {
+              wx.showModal({
+                title: '需要录音权限',
+                content: '请在设置中开启录音权限',
+                showCancel: false
+              });
+            }
+          });
+        } else {
+          this.startRecording();
+        }
+      }
+    });
+  },
+
+  // 开始录音
+  startRecording() {
+    const { recorderManager } = this.data;
+    if (!recorderManager) return;
+
+    recorderManager.start({
+      duration: 60000, // 最长录音时间60秒
+      sampleRate: 16000,
+      numberOfChannels: 1,
+      encodeBitRate: 48000,
+      format: 'mp3'
+    });
+  },
+
+  // 停止语音输入
+  stopVoiceInput() {
+    if (!this.data.isRecording) return;
+    
+    const { recorderManager } = this.data;
+    if (recorderManager) {
+      recorderManager.stop();
+    }
+  },
+
+  // 取消语音输入
+  cancelVoiceInput() {
+    if (!this.data.isRecording) return;
+    
+    const { recorderManager } = this.data;
+    if (recorderManager) {
+      recorderManager.stop();
+    }
+    wx.showToast({ title: '已取消录音', icon: 'none' });
+  },
+
+  // 上传语音文件
+  async uploadVoiceFile(tempFilePath) {
+    wx.showLoading({ title: '正在识别语音...' });
+    
+    try {
+      // 把音频转成base64的编码
+      const base64data = wx.getFileSystemManager().readFileSync(tempFilePath, 'base64');
+      
+      // 调用语音识别云函数
+      const { result } = await wx.cloud.callFunction({
+        name: 'soundtxt',  // 调用的云函数的名称
+        data: {
+          VoiceFormat: "m4a", //如果这里写mp3，模拟器会有bug
+          soundBase64: base64data, //音频的base64编码
+          soundLen: wx.getFileSystemManager().statSync(tempFilePath).size //音频的大小
+        }
+      });
+
+      wx.hideLoading();
+
+      if (result && result.result && result.result.Result) {
+        const recognizedText = result.result.Result;
+        if (recognizedText && recognizedText.trim()) {
+          this.setData({ inputValue: recognizedText });
+          wx.showToast({ title: '语音识别成功', icon: 'success' });
+        } else {
+          wx.showToast({ title: '未能识别语音内容', icon: 'none' });
+        }
+      } else {
+        wx.showToast({ title: '语音识别失败', icon: 'none' });
+      }
+    } catch (error) {
+      wx.hideLoading();
+      console.error('语音识别失败:', error);
+      wx.showToast({ title: '语音识别失败', icon: 'none' });
     }
   },
 });

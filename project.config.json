@@ -42,7 +42,12 @@
     "minifyWXML": true,
     "disableUseStrict": false,
     "useCompilerPlugins": false,
-    "ignoreUploadUnusedFiles": true
+    "ignoreUploadUnusedFiles": true,
+    "compileWorklet": false,
+    "localPlugins": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true
   },
   "compileType": "miniprogram",
   "condition": {},
@@ -56,5 +61,7 @@
     "ignore": [],
     "include": []
   },
-  "appid": "wx0f698c7c0d8dd4f8"
+  "appid": "wx0f698c7c0d8dd4f8",
+  "libVersion": "3.7.7",
+  "simulatorPluginLibVersion": {}
 }
